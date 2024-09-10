@@ -44,7 +44,7 @@ fi
 
 # Start Block Ingest Service
 echo "Starting Block Ingest Service..."
-docker run -d --rm -e CHAIN="$CHAIN" -e RELAY_CHAIN="$RELAY_CHAIN" -e WSS="$WSS" -p 8501:8501 eu.gcr.io/parity-data-infra-evaluation/block-ingest:0.1
+docker run -d --rm -e CHAIN="$CHAIN" -e RELAY_CHAIN="$RELAY_CHAIN" -e WSS="$WSS" -p 8501:8501 eu.gcr.io/parity-data-infra-evaluation/block-ingest:0.2
 if [ $? -eq 0 ]; then
     echo "Block Ingest Service started successfully."
 else
@@ -52,4 +52,6 @@ else
     exit 1
 fi
 
+echo "Starting the services....this will take a minute...."
+sleep 60
 echo "Both services are now running. You can access Substrate API Sidecar at http://localhost:8080 and Block Ingest Service at http://localhost:8501"

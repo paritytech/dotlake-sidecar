@@ -7,7 +7,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 # Function to connect to DuckDB
-def connect_to_db(db_path='/Users/pranaypatil/data_eng_repos/data-applications/blocks.db'):
+def connect_to_db(db_path='blocks.db'):
     return duckdb.connect(db_path, read_only=True)
 
 def parse_arguments():

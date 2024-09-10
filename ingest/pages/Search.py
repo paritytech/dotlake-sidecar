@@ -66,10 +66,11 @@ if block_number:
 
             # Display events
             st.write("Events:")
-            events = pd.DataFrame([
+            events = [
                 event for extrinsic in result['extrinsics'].iloc[0]
                 for event in extrinsic['events']
-            ])
+            ] + result['onInitialize'].iloc[0]['events'] + result['onFinalize'].iloc[0]['events']
+            events = pd.DataFrame(events)
             st.dataframe(events)
 
         else:
