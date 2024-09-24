@@ -9,9 +9,14 @@ def connect_to_db(db_path='blocks.db'):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Block ingestion script for Substrate-based chains")
-    parser.add_argument("--chain", required=True)
-    parser.add_argument("--relay_chain", required=True)
-    parser.add_argument("--db_path", required=True)
+    parser.add_argument("--chain", required=True, help="Name of the chain to process")
+    parser.add_argument("--relay_chain", required=True, help="Name of the relay chain")
+    parser.add_argument("--database", required=True, help="Name of the database")
+    parser.add_argument("--db_path")
+    parser.add_argument("--db_project")
+    parser.add_argument("--db_cred_path")
+    parser.add_argument("--db_dataset")
+    parser.add_argument("--db_table")
     return parser.parse_args()
 
 
@@ -33,20 +38,24 @@ if block_number:
     try:
         # Convert input to integer
         block_number = int(block_number)
-        
-        # Connect to DuckDB
-        conn = connect_to_db(args.db_path)
 
-        # Query to fetch the block
-        query = f"""
-        SELECT *
-        FROM blocks_{args.relay_chain}_{args.chain}
-        WHERE number = '{block_number}'
-        LIMIT 1
-        """
-        
-        # Execute query and fetch results
-        result = conn.execute(query).fetchdf()
+        if args.database == 'postgres':
+            from postgres_utils import connect_to_postgres, close_connection, query
+            db_connection = connect_to_postgres(args.db_host, args.db_port, args.db_name, args.db_user, args.db_password)
+            fetch_last_block_query = f"SELECT * FROM blocks_{args.relay_chain}_{args.chain} WHERE number = '{block_number}' LIMIT 1"
+            result = query(db_connection, fetch_last_block_query)
+            close_connection(db_connection)
+        elif args.database == 'duckdb':
+            from duckdb_utils import connect_to_db, close_connection, query
+            db_connection = connect_to_db(args.db_path)
+            fetch_last_block_query = f"SELECT * FROM blocks_{args.relay_chain}_{args.chain} WHERE number = '{block_number}' LIMIT 1"
+            result = query(db_connection, fetch_last_block_query)
+            close_connection(db_connection)
+        elif args.database == 'bigquery':
+            from bigquery_utils import connect_to_bigquery, query
+            db_connection = connect_to_bigquery(args.db_project, args.db_cred_path)
+            fetch_last_block_query = f"SELECT * FROM {args.db_dataset}.{args.db_table} WHERE number = '{block_number}' LIMIT 1"
+            result = query(db_connection, fetch_last_block_query)
 
         if not result.empty:
             st.subheader(f"Block Details: {block_number}")
@@ -69,15 +78,12 @@ if block_number:
             events = [
                 event for extrinsic in result['extrinsics'].iloc[0]
                 for event in extrinsic['events']
-            ] + result['onInitialize'].iloc[0]['events'] + result['onFinalize'].iloc[0]['events']
+            ] + result['onInitialize'].iloc[0]['events'].tolist() + result['onFinalize'].iloc[0]['events'].tolist()
             events = pd.DataFrame(events)
             st.dataframe(events)
 
         else:
             st.warning(f"No block found with number {block_number}")
-
-        # Close the connection
-        conn.close()
 
     except ValueError:
         st.error("Please enter a valid integer for the block number.")

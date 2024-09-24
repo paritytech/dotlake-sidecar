@@ -184,7 +184,7 @@ def insert_block(conn, block_data):
     """, (
         block_data['relay_chain'],
         block_data['chain'],
-        block_data['timestamp']/1000,
+        block_data['timestamp'],
         block_data['number'],
         block_data.get('hash', ''),
         block_data.get('parentHash', ''),
@@ -202,6 +202,9 @@ def drop_table(conn, table_name):
     conn.execute(f"""
         DROP TABLE {table_name}
     """)
+
+def query(conn, query_str):
+    return conn.execute(query_str).fetchdf()
 
 def close_connection(conn):
     """

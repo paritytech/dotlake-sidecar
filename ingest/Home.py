@@ -12,9 +12,14 @@ def connect_to_db(db_path='blocks.db'):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Block ingestion script for Substrate-based chains")
-    parser.add_argument("--chain", required=True)
-    parser.add_argument("--relay_chain", required=True)
-    parser.add_argument("--db_path", required=True)
+    parser.add_argument("--chain", required=True, help="Name of the chain to process")
+    parser.add_argument("--relay_chain", required=True, help="Name of the relay chain")
+    parser.add_argument("--database", required=True, help="Name of the database")
+    parser.add_argument("--db_path")
+    parser.add_argument("--db_project")
+    parser.add_argument("--db_cred_path")
+    parser.add_argument("--db_dataset")
+    parser.add_argument("--db_table")
     return parser.parse_args()
 
 
@@ -27,7 +32,7 @@ st.set_page_config(
 
 # Run the autorefresh about every 2000 milliseconds (2 seconds) and stop
 # after it's been refreshed 100 times.
-# count = st_autorefresh(interval=30000, limit=100, key="fizzbuzzcounter")
+count = st_autorefresh(interval=30000, limit=100, key="fizzbuzzcounter")
 
 placeholder = st.empty()
 
@@ -37,17 +42,26 @@ relay_chain = args.relay_chain
 with placeholder.container():
 
     try:
-        # Connect to DuckDB
-        conn = connect_to_db(args.db_path)
 
-        query = f"""
-        SELECT *
-        FROM blocks_{relay_chain}_{chain}
-        ORDER BY number DESC
-        LIMIT 50
-        """
-        recent_blocks = conn.execute(query).fetchdf()
-        recent_blocks['timestamp'] = recent_blocks['timestamp'].apply(lambda x: datetime.fromtimestamp(x).strftime("%Y-%m-%d %H:%M:%S") )
+        if args.database == 'postgres':
+            from postgres_utils import connect_to_postgres, close_connection, query
+            db_connection = connect_to_postgres(args.db_host, args.db_port, args.db_name, args.db_user, args.db_password)
+            fetch_last_block_query = f"SELECT * FROM blocks_{args.relay_chain}_{args.chain} ORDER BY number DESC LIMIT 50"
+            recent_blocks = query(db_connection, fetch_last_block_query)
+            close_connection(db_connection)
+        elif args.database == 'duckdb':
+            from duckdb_utils import connect_to_db, close_connection, query
+            db_connection = connect_to_db(args.db_path)
+            fetch_last_block_query = f"SELECT * FROM blocks_{args.relay_chain}_{args.chain} ORDER BY number DESC LIMIT 50"
+            recent_blocks = query(db_connection, fetch_last_block_query)
+            close_connection(db_connection)
+        elif args.database == 'bigquery':
+            from bigquery_utils import connect_to_bigquery, query
+            db_connection = connect_to_bigquery(args.db_project, args.db_cred_path)
+            fetch_last_block_query = f"SELECT * FROM {args.db_dataset}.{args.db_table} ORDER BY number DESC LIMIT 50"
+            recent_blocks = query(db_connection, fetch_last_block_query)
+
+        recent_blocks['timestamp'] = recent_blocks['timestamp'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime("%Y-%m-%d %H:%M:%S") )
 
         # Streamlit app
         st.title("Dotlake Explorer")
@@ -89,8 +103,7 @@ with placeholder.container():
 
         st.dataframe(recent_blocks[['number', 'timestamp', 'hash', 'finalized']])
         
-        # Close the connection
-        conn.close()
     except Exception as e:
         st.error("Oops...something went wrong, please refresh the page")
+        st.error(e)
 

@@ -1,0 +1,23 @@
+relay_chain: Polkadot
+chain: Hydration
+wss: wss://hydradx-rpc.dwellir.com
+databases:
+  # - type: postgres
+  #   host: localhost
+  #   port: 5432
+  #   name: block_ingest_db
+  #   user: db_user
+  #   password: db_password
+  # - type: duckdb
+  #   path: /path/to/duckdb/database
+  # - type: mysql
+  #   host: mysql_host
+  #   port: 3306
+  #   name: block_db
+  #   user: mysql_user
+  #   password: mysql_password
+  - type: bigquery
+    project_id: parity-data-infra-evaluation
+    credentials_path: /Users/pranaypatil/Downloads/parity-data-infra-evaluation-1d7b2ec60ac2.json
+    dataset: pranay_playground
+    table: blocks_hydration

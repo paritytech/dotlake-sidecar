@@ -1,36 +1,22 @@
 #!/bin/bash
 
-# Parse command line arguments
-while [[ $# -gt 0 ]]; do
-    key="$1"
-    case $key in
-        --chain)
-        CHAIN="$2"
-        shift
-        shift
-        ;;
-        --relay-chain)
-        RELAY_CHAIN="$2"
-        shift
-        shift
-        ;;
-        --wss)
-        WSS="$2"
-        shift
-        shift
-        ;;
-        *)
-        echo "Unknown option: $1"
-        exit 1
-        ;;
-    esac
-done
-
-# Check if required arguments are provided
-if [ -z "$CHAIN" ] || [ -z "$RELAY_CHAIN" ] || [ -z "$WSS" ]; then
-    echo "Usage: $0 --chain <chain> --relay-chain <relay_chain> --wss <wss_endpoint>"
+# Check if yq is installed
+if ! command -v yq &> /dev/null; then
+    echo "yq is not installed. Please install it to parse YAML files."
     exit 1
 fi
+
+# Read configuration from config.yaml
+RELAY_CHAIN=$(yq eval '.relay_chain' config.yaml)
+CHAIN=$(yq eval '.chain' config.yaml)
+WSS=$(yq eval '.wss' config.yaml)
+
+# Database configuration
+DB_HOST=$(yq eval '.database.host' config.yaml)
+DB_PORT=$(yq eval '.database.port' config.yaml)
+DB_NAME=$(yq eval '.database.name' config.yaml)
+DB_USER=$(yq eval '.database.user' config.yaml)
+DB_PASSWORD=$(yq eval '.database.password' config.yaml)
 
 # Start Substrate API Sidecar
 echo "Starting Substrate API Sidecar..."
@@ -44,7 +30,16 @@ fi
 
 # Start Block Ingest Service
 echo "Starting Block Ingest Service..."
-docker run -d --rm -e CHAIN="$CHAIN" -e RELAY_CHAIN="$RELAY_CHAIN" -e WSS="$WSS" -p 8501:8501 eu.gcr.io/parity-data-infra-evaluation/block-ingest:0.2
+docker run -d --rm \
+    -e CHAIN="$CHAIN" \
+    -e RELAY_CHAIN="$RELAY_CHAIN" \
+    -e WSS="$WSS" \
+    -e DB_HOST="$DB_HOST" \
+    -e DB_PORT="$DB_PORT" \
+    -e DB_NAME="$DB_NAME" \
+    -e DB_USER="$DB_USER" \
+    -e DB_PASSWORD="$DB_PASSWORD" \
+    -p 8501:8501 eu.gcr.io/parity-data-infra-evaluation/block-ingest:0.2
 if [ $? -eq 0 ]; then
     echo "Block Ingest Service started successfully."
 else
