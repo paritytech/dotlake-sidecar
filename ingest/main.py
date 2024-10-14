@@ -20,6 +20,11 @@ def parse_arguments():
     parser.add_argument("--db_cred_path")
     parser.add_argument("--db_dataset")
     parser.add_argument("--db_table")
+    parser.add_argument("--db_host", required=False, help="Database host")
+    parser.add_argument("--db_port", required=False, type=int, help="Database port")
+    parser.add_argument("--db_user", required=False, help="Database user")
+    parser.add_argument("--db_password", required=False, help="Database password")
+    parser.add_argument("--db_name", required=False, help="Database name")
     return parser.parse_args()
 
 
@@ -32,15 +37,29 @@ def main():
         'database_dataset': args.db_dataset,
         'database_table': args.db_table,
         'database_cred_path': args.db_cred_path,
-        'database_path': args.db_path
+        'database_path': args.db_path,
+        'database_host': args.db_host,
+        'database_port': args.db_port,
+        'database_user': args.db_user,
+        'database_password': args.db_password,
+        'database_name': args.db_name
     }
 
     # Connect to the database
     if args.database == 'postgres':
-        from postgres_utils import connect_to_postgres, close_connection, create_blocks_table
+        from postgres_utils import connect_to_postgres, close_connection, create_tables
         db_connection = connect_to_postgres(args.db_host, args.db_port, args.db_name, args.db_user, args.db_password)
-        create_blocks_table(db_connection, args.chain, args.relay_chain)
+        create_tables(db_connection, args.chain, args.relay_chain)
         close_connection(db_connection)
+    elif args.database == 'mysql':
+        from mysql_utils import connect_to_mysql, close_connection, create_tables
+        db_connection = connect_to_mysql(args.db_host, args.db_port, args.db_name, args.db_user, args.db_password)
+        if db_connection:
+            create_tables(db_connection, args.chain, args.relay_chain)
+            close_connection(db_connection)
+            print(f"Connected to MySQL and created tables for {args.chain} on {args.relay_chain}")
+        else:
+            print("Failed to connect to MySQL database")
     elif args.database == 'duckdb':
         from duckdb_utils import connect_to_db, close_connection, create_blocks_table
         db_connection = connect_to_db(args.db_path)
@@ -96,6 +115,12 @@ def main():
                 db_connection = connect_to_postgres(args.db_host, args.db_port, args.db_name, args.db_user, args.db_password)
                 fetch_last_block_query = f"SELECT number FROM blocks_{args.relay_chain}_{args.chain} ORDER BY number DESC LIMIT 1"
                 df = query(db_connection, fetch_last_block_query)
+                close_connection(db_connection)
+            elif args.database == 'mysql':
+                from mysql_utils import connect_to_mysql, close_connection, query_block_data
+                db_connection = connect_to_mysql(args.db_host, args.db_port, args.db_name, args.db_user, args.db_password)
+                fetch_last_block_query = f"SELECT number FROM blocks_{args.relay_chain}_{args.chain} ORDER BY number DESC LIMIT 1"
+                df = query_block_data(db_connection, fetch_last_block_query)
                 close_connection(db_connection)
             elif args.database == 'duckdb':
                 from duckdb_utils import connect_to_db, close_connection, query

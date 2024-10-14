@@ -5,3 +5,5 @@ pandas==1.5.3
 streamlit==1.38.0
 streamlit-autorefresh==1.0.1
 numpy==1.24.2
+psycopg2-binary==2.9.9
+mysql-connector-python==9.0.0

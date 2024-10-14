@@ -17,6 +17,10 @@ DB_PORT=$(yq eval '.database.port' config.yaml)
 DB_NAME=$(yq eval '.database.name' config.yaml)
 DB_USER=$(yq eval '.database.user' config.yaml)
 DB_PASSWORD=$(yq eval '.database.password' config.yaml)
+DB_PROJECT=$(yq eval '.databases[0].project_id' config.yaml)
+DB_CRED_PATH=$(yq eval '.databases[0].credentials_path' config.yaml)
+DB_DATASET=$(yq eval '.databases[0].dataset' config.yaml)
+DB_TABLE=$(yq eval '.databases[0].table' config.yaml)
 
 # Start Substrate API Sidecar
 echo "Starting Substrate API Sidecar..."
@@ -39,7 +43,7 @@ docker run -d --rm \
     -e DB_NAME="$DB_NAME" \
     -e DB_USER="$DB_USER" \
     -e DB_PASSWORD="$DB_PASSWORD" \
-    -p 8501:8501 eu.gcr.io/parity-data-infra-evaluation/block-ingest:0.2
+    -p 8501:8501 eu.gcr.io/parity-data-infra-evaluation/block-ingest:0.2.1
 if [ $? -eq 0 ]; then
     echo "Block Ingest Service started successfully."
 else

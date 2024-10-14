@@ -70,9 +70,15 @@ def writeBlock(request, database_info):
     try:
             if database_info['database'] == 'postgres':
                 from postgres_utils import connect_to_postgres, close_connection, insert_block_data
-                db_connection = connect_to_postgres(database_info['database_host'], database_info['db_port'], database_info['db_name'], database_info['db_user'], database_info['db_password'])
+                db_connection = connect_to_postgres(database_info['database_host'], database_info['database_port'], database_info['database_name'], database_info['database_user'], database_info['database_password'])
                 insert_block_data(db_connection, block_data, chain_name, relay_chain)
                 print(f"Successfully inserted block {block_id} into Postgres")
+                close_connection(db_connection)
+            elif database_info['database'] == 'mysql':
+                from mysql_utils import connect_to_mysql, close_connection, insert_block_data
+                db_connection = connect_to_mysql(database_info['database_host'], database_info['database_port'], database_info['database_name'], database_info['database_user'], database_info['database_password'])
+                insert_block_data(db_connection, block_data, chain_name, relay_chain)
+                print(f"Successfully inserted block {block_id} into MySQL")
                 close_connection(db_connection)
             elif database_info['database'] == 'duckdb':
                 from duckdb_utils import connect_to_db, close_connection, insert_block

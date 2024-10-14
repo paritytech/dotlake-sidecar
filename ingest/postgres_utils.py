@@ -1,5 +1,7 @@
 import psycopg2
 from psycopg2 import Error
+import pandas as pd
+import json
 
 def connect_to_postgres(host, port, database, user, password):
     """
@@ -40,11 +42,14 @@ def create_tables(connection, chain, relay_chain):
     """
     try:
         cursor = connection.cursor()
+
+        delete_table(connection, f"blocks_{relay_chain}_{chain}")
+
         cursor.execute(f"""
             CREATE TABLE IF NOT EXISTS blocks_{relay_chain}_{chain} (
                 relay_chain VARCHAR(255),
                 chain VARCHAR(255),
-                timestamp INTEGER,
+                timestamp BIGINT,
                 number VARCHAR(255) PRIMARY KEY,
                 hash VARCHAR(255),
                 parentHash VARCHAR(255),
@@ -52,6 +57,9 @@ def create_tables(connection, chain, relay_chain):
                 extrinsicsRoot VARCHAR(255),
                 authorId VARCHAR(255),
                 finalized BOOLEAN,
+                onInitialize JSONB,
+                onFinalize JSONB,
+                logs JSONB,
                 extrinsics JSONB
             )
         """)
@@ -75,8 +83,8 @@ def insert_block_data(connection, block_data, chain, relay_chain):
         
         insert_query = f"""
         INSERT INTO blocks_{relay_chain}_{chain} 
-        (relay_chain, chain, timestamp, number, hash, parentHash, stateRoot, extrinsicsRoot, authorId, finalized, extrinsics)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        (relay_chain, chain, timestamp, number, hash, parentHash, stateRoot, extrinsicsRoot, authorId, finalized, onInitialize, onFinalize, logs, extrinsics)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (number) DO UPDATE SET
         relay_chain = EXCLUDED.relay_chain,
         chain = EXCLUDED.chain,
@@ -87,6 +95,9 @@ def insert_block_data(connection, block_data, chain, relay_chain):
         extrinsicsRoot = EXCLUDED.extrinsicsRoot,
         authorId = EXCLUDED.authorId,
         finalized = EXCLUDED.finalized,
+        onInitialize = EXCLUDED.onInitialize,
+        onFinalize = EXCLUDED.onFinalize,
+        logs = EXCLUDED.logs,
         extrinsics = EXCLUDED.extrinsics
         """
         
@@ -101,7 +112,10 @@ def insert_block_data(connection, block_data, chain, relay_chain):
             block_data['extrinsicsRoot'],
             block_data['authorId'],
             block_data['finalized'],
-            psycopg2.extras.Json(block_data['extrinsics'])
+            json.dumps(block_data['onInitialize']),
+            json.dumps(block_data['onFinalize']),
+            json.dumps(block_data['logs']),
+            json.dumps(block_data['extrinsics'])
         )
         
         cursor.execute(insert_query, values)
@@ -121,5 +135,46 @@ def close_connection(connection):
         connection.close()
         print("PostgreSQL connection closed")
 
+
+def delete_table(connection, table_name):
+    """
+    Delete a table from the PostgreSQL database.
+
+    Args:
+        connection (psycopg2.extensions.connection): The database connection object.
+        table_name (str): The name of the table to be deleted.
+    """
+    try:
+        cursor = connection.cursor()
+        
+        # SQL query to delete the table
+        delete_query = f"DROP TABLE IF EXISTS {table_name}"
+        
+        # Execute the query
+        cursor.execute(delete_query)
+        
+        # Commit the changes
+        connection.commit()
+        
+        print(f"Table '{table_name}' has been successfully deleted.")
+    except Error as e:
+        print(f"Error deleting table: {e}")
+    finally:
+        if cursor:
+            cursor.close()
+
+
 def query(connection, query_str):
-    return ""
+    try:
+        cursor = connection.cursor()
+        cursor.execute(query_str)
+        columns = [desc[0] for desc in cursor.description]
+        results = cursor.fetchall()
+        df = pd.DataFrame(results, columns=columns)
+        return df
+    except Error as e:
+        print(f"Error executing query: {e}")
+        return None
+    finally:
+        if cursor:
+            cursor.close()

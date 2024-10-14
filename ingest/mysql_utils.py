@@ -1,6 +1,8 @@
 # MySQL Database Connection Utilities
 import mysql.connector
 from mysql.connector import Error
+import json
+import pandas as pd
 
 def connect_to_mysql(host, port, database, user, password):
     """
@@ -31,7 +33,7 @@ def connect_to_mysql(host, port, database, user, password):
         print(f"Error connecting to MySQL database: {e}")
     return None
 
-def create_tables(connection):
+def create_tables(connection, chain, relay_chain):
     """
     Create necessary tables in the MySQL database if they don't exist.
 
@@ -39,37 +41,43 @@ def create_tables(connection):
         connection (mysql.connector.connection.MySQLConnection): The database connection object.
     """
     try:
+        delete_table(connection, f"blocks_{relay_chain}_{chain}")
         cursor = connection.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS blocks (
+        cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS blocks_{relay_chain}_{chain} (
                 relay_chain VARCHAR(255),
                 chain VARCHAR(255),
-                timestamp INT,
+                timestamp BIGINT,
                 number VARCHAR(255) PRIMARY KEY,
                 hash VARCHAR(255),
                 parentHash VARCHAR(255),
                 stateRoot VARCHAR(255),
                 extrinsicsRoot VARCHAR(255),
                 authorId VARCHAR(255),
-                finalized BOOLEAN
+                finalized BOOLEAN,
+                extrinsics JSON,
+                onFinalize JSON,
+                onInitialize JSON,
+                logs JSON
             )
         """)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS extrinsics (
-                block_number VARCHAR(255),
-                pallet VARCHAR(255),
-                method VARCHAR(255),
-                signature VARCHAR(255),
-                signer_id VARCHAR(255),
-                FOREIGN KEY (block_number) REFERENCES blocks(number)
-            )
-        """)
+        # cursor.execute("""
+        #     CREATE TABLE IF NOT EXISTS extrinsics (
+        #         block_number VARCHAR(255),
+        #         pallet VARCHAR(255),
+        #         method VARCHAR(255),
+        #         signature VARCHAR(255),
+        #         signer_id VARCHAR(255),
+        #         events JSON,
+        #         FOREIGN KEY (block_number) REFERENCES blocks(number)
+        #     )
+        # """)
         connection.commit()
         print("Tables created successfully")
     except Error as e:
         print(f"Error creating tables: {e}")
 
-def insert_block_data(connection, block_data):
+def insert_block_data(connection, block_data, chain_name, relay_chain):
     """
     Insert processed block data into the MySQL database.
 
@@ -81,72 +89,81 @@ def insert_block_data(connection, block_data):
         cursor = connection.cursor()
         
         # Insert block data
-        block_insert_query = """
-        INSERT INTO blocks (relay_chain, chain, timestamp, number, hash, parentHash, stateRoot, extrinsicsRoot, authorId, finalized)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        block_insert_query = f"""
+        INSERT INTO blocks_{relay_chain}_{chain_name} (relay_chain, chain, timestamp, number, hash, parentHash, stateRoot, extrinsicsRoot, authorId, finalized, extrinsics, onFinalize, onInitialize, logs)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         block_values = (
             block_data['relay_chain'], block_data['chain'], block_data['timestamp'],
             block_data['number'], block_data['hash'], block_data['parentHash'],
             block_data['stateRoot'], block_data['extrinsicsRoot'], block_data['authorId'],
-            block_data['finalized']
+            block_data['finalized'], json.dumps(block_data['extrinsics']),
+            json.dumps(block_data['onFinalize']), json.dumps(block_data['onInitialize']),
+            json.dumps(block_data['logs'])
         )
         cursor.execute(block_insert_query, block_values)
 
         # Insert extrinsics data
-        extrinsic_insert_query = """
-        INSERT INTO extrinsics (block_number, pallet, method, signature, signer_id)
-        VALUES (%s, %s, %s, %s, %s)
-        """
-        for extrinsic in block_data['extrinsics']:
-            extrinsic_values = (
-                block_data['number'], extrinsic['method']['pallet'], extrinsic['method']['method'],
-                extrinsic['signature'].get('signature'), extrinsic['signature'].get('signer', {}).get('id')
-            )
-            cursor.execute(extrinsic_insert_query, extrinsic_values)
+        # extrinsic_insert_query = """
+        # INSERT INTO extrinsics (block_number, pallet, method, signature, signer_id)
+        # VALUES (%s, %s, %s, %s, %s)
+        # """
+        # for extrinsic in block_data['extrinsics']:
+        #     extrinsic_values = (
+        #         block_data['number'], extrinsic['method']['pallet'], extrinsic['method']['method'],
+        #         extrinsic['signature'].get('signature'), extrinsic['signature'].get('signer', {}).get('id')
+        #     )
+        #     cursor.execute(extrinsic_insert_query, extrinsic_values)
 
         connection.commit()
         print(f"Block {block_data['number']} inserted successfully")
     except Error as e:
         print(f"Error inserting block data: {e}")
 
-# def query_block_data(connection, query_type, value):
-#     """
-#     Retrieve stored block data from the MySQL database.
+def query_block_data(connection, query_str):
+    """
+    Execute a given SQL query on the MySQL database and return the results as a DataFrame.
 
-#     Args:
-#         connection (mysql.connector.connection.MySQLConnection): The database connection object.
-#         query_type (str): The type of query (e.g., 'number', 'hash').
-#         value: The value to query for.
+    Args:
+        connection (mysql.connector.connection.MySQLConnection): The database connection object.
+        query_str (str): The SQL query string to execute.
 
-#     Returns:
-#         dict: The retrieved block data if found, None otherwise.
-#     """
-#     try:
-#         cursor = connection.cursor(dictionary=True)
-        
-#         if query_type == 'number':
-#             query = "SELECT * FROM blocks WHERE number = %s"
-#         elif query_type == 'hash':
-#             query = "SELECT * FROM blocks WHERE hash = %s"
-#         else:
-#             print(f"Unsupported query type: {query_type}")
-#             return None
+    Returns:
+        pandas.DataFrame: The query results as a DataFrame, or None if an error occurs.
+    """
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(query_str)
+        results = cursor.fetchall()
+        df = pd.DataFrame(results)
+        return df
+    except Error as e:
+        print(f"Error executing query: {e}")
+        return None
+    finally:
+        if cursor:
+            cursor.close()
 
-#         cursor.execute(query, (value,))
-#         block = cursor.fetchone()
+def delete_table(connection, table_name):
+    """
+    Delete a table from the MySQL database if it exists.
 
-#         if block:
-#             # Fetch associated extrinsics
-#             extrinsics_query = "SELECT * FROM extrinsics WHERE block_number = %s"
-#             cursor.execute(extrinsics_query, (block['number'],))
-#             extrinsics = cursor.fetchall()
-#             block['extrinsics'] = extrinsics
+    Args:
+        connection (mysql.connector.connection.MySQLConnection): The database connection object.
+        table_name (str): The name of the table to delete.
+    """
+    try:
+        cursor = connection.cursor()
+        drop_table_query = f"DROP TABLE IF EXISTS {table_name}"
+        cursor.execute(drop_table_query)
+        connection.commit()
+        print(f"Table '{table_name}' deleted successfully (if it existed)")
+    except Error as e:
+        print(f"Error deleting table '{table_name}': {e}")
+    finally:
+        if cursor:
+            cursor.close()
 
-#         return block
-#     except Error as e:
-#         print(f"Error querying block data: {e}")
-#         return None
 
 def close_connection(connection):
     """

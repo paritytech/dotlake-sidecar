@@ -2,6 +2,7 @@ import streamlit as st
 import argparse
 import duckdb
 import pandas as pd
+import json
 import time
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
@@ -14,12 +15,19 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Block ingestion script for Substrate-based chains")
     parser.add_argument("--chain", required=True, help="Name of the chain to process")
     parser.add_argument("--relay_chain", required=True, help="Name of the relay chain")
-    parser.add_argument("--database", required=True, help="Name of the database")
+    parser.add_argument("--backfill", action="store_true", help="Enable backfill mode")
+    parser.add_argument("--live", action="store_true", help="Enable live ingestion mode")
+    parser.add_argument("--database", help="Name of the database")
     parser.add_argument("--db_path")
     parser.add_argument("--db_project")
     parser.add_argument("--db_cred_path")
     parser.add_argument("--db_dataset")
     parser.add_argument("--db_table")
+    parser.add_argument("--db_host", required=False, help="Database host")
+    parser.add_argument("--db_port", required=False, type=int, help="Database port")
+    parser.add_argument("--db_user", required=False, help="Database user")
+    parser.add_argument("--db_password", required=False, help="Database password")
+    parser.add_argument("--db_name", required=False, help="Database name")
     return parser.parse_args()
 
 
@@ -48,6 +56,12 @@ with placeholder.container():
             db_connection = connect_to_postgres(args.db_host, args.db_port, args.db_name, args.db_user, args.db_password)
             fetch_last_block_query = f"SELECT * FROM blocks_{args.relay_chain}_{args.chain} ORDER BY number DESC LIMIT 50"
             recent_blocks = query(db_connection, fetch_last_block_query)
+            close_connection(db_connection)
+        elif args.database == 'mysql':
+            from mysql_utils import connect_to_mysql, close_connection, query_block_data
+            db_connection = connect_to_mysql(args.db_host, args.db_port, args.db_name, args.db_user, args.db_password)
+            fetch_last_block_query = f"SELECT * FROM blocks_{args.relay_chain}_{args.chain} ORDER BY number DESC LIMIT 50"
+            recent_blocks = query_block_data(db_connection, fetch_last_block_query)
             close_connection(db_connection)
         elif args.database == 'duckdb':
             from duckdb_utils import connect_to_db, close_connection, query
@@ -85,15 +99,37 @@ with placeholder.container():
         extrinsics_col, events_col = st.columns(2)
 
         # Display the number of extrinsics in the most recent block
-        num_extrinsics = len(recent_blocks['extrinsics'].iloc[0])
+        if args.database == 'postgres' or args.database == 'mysql':
+            num_extrinsics = len(json.loads(recent_blocks['extrinsics'].iloc[0]))
+        elif args.database == 'duckdb':
+            num_extrinsics = len(recent_blocks['extrinsics'].iloc[0])
+        elif args.database == 'bigquery':
+            num_extrinsics = len(json.loads(recent_blocks['extrinsics'].iloc[0]))
+        else:
+            num_extrinsics = 0  # Default value if database type is not recognized
         extrinsics_col.metric("Extrinsics", num_extrinsics)
 
         # Calculate the total number of events in the most recent block
-        num_events = (
-            len(recent_blocks['onFinalize'].iloc[0]['events']) +
-            len(recent_blocks['onInitialize'].iloc[0]['events']) +
-            sum(len(ex['events']) for ex in recent_blocks['extrinsics'].iloc[0])
-        )
+        if args.database == 'postgres' or args.database == 'mysql':
+            num_events = (
+                len(json.loads(recent_blocks['onFinalize'].iloc[0])['events']) +
+                len(json.loads(recent_blocks['onInitialize'].iloc[0])['events']) +
+                sum(len(ex['events']) for ex in json.loads(recent_blocks['extrinsics'].iloc[0]))
+            )
+        elif args.database == 'duckdb':
+            num_events = (
+                len(recent_blocks['onFinalize'].iloc[0]['events']) +
+                len(recent_blocks['onInitialize'].iloc[0]['events']) +
+                sum(len(ex['events']) for ex in recent_blocks['extrinsics'].iloc[0])
+            )
+        elif args.database == 'bigquery':
+            num_events = (
+                len(json.loads(recent_blocks['onFinalize'].iloc[0])['events']) +
+                len(json.loads(recent_blocks['onInitialize'].iloc[0])['events']) +
+                sum(len(ex['events']) for ex in json.loads(recent_blocks['extrinsics'].iloc[0]))
+            )
+        else:
+            num_events = 0  # Default value if database type is not recognized
         
         # Display the total number of events
         events_col.metric("Events", num_events)
