@@ -4,10 +4,11 @@ This repository contains the necessary components to set up and run a data inges
 
 ## Overview
 
-The dotlake-sidecar project facilitates the extraction and processing of blockchain data from Polkadot-based networks. It uses two main components:
+The dotlake-sidecar project facilitates the extraction and processing of blockchain data from Polkadot-based networks. It uses three main components:
 
 1. Substrate API Sidecar
 2. Custom Block Ingest Service
+3. Apache Superset
 
 These components work together to provide a robust solution for capturing and processing blockchain data.
 
@@ -19,11 +20,15 @@ These components work together to provide a robust solution for capturing and pr
 
 ### 2. Custom Block Ingest Service
 
-The custom block ingest service is a Docker container that processes and stores blockchain data. It is designed to work in conjunction with the Substrate API Sidecar to ingest blocks and related information from the specified blockchain. The service utilizes DuckDB, an embedded analytical database, as part of its data flow:
+The custom block ingest service is a Docker container that processes and stores blockchain data. It is designed to work in conjunction with the Substrate API Sidecar to ingest blocks and related information from the specified blockchain. The service utilizes DuckDB, MySQL, PostgreSQL, and BigQuery as part of its data flow:
 
 1. The service ingests blockchain data from the Substrate API Sidecar.
 2. The ingested data is then processed and transformed as needed.
-3. The processed data is stored in DuckDB.
+3. The processed data is stored in DuckDB, MySQL, PostgreSQL, or BigQuery.
+
+### 3. Apache Superset
+
+Apache Superset is integrated for dashboarding capabilities, allowing users to visualize and analyze the ingested blockchain data effectively.
 
 ## How It Works
 
@@ -32,18 +37,17 @@ The system operates using the following workflow:
 1. The Substrate API Sidecar connects to a specified WebSocket endpoint (WSS) of a Substrate-based blockchain node.
 2. The Sidecar exposes a RESTful API on port 8080, allowing easy access to blockchain data.
 3. The custom block ingest service connects to the same WSS endpoint and begins processing blocks.
-4. The ingest service stores the processed data, making it available for further analysis or querying.
+4. The ingest service stores the processed data in DuckDB, MySQL, PostgreSQL, or BigQuery, making it available for further analysis or querying.
+5. Apache Superset can be used to create dashboards and visualizations based on the ingested data.
 
 ## Usage
 
-To run the dotlake-sidecar, use the provided `dotlakeIngest.sh` script. This script sets up both the Substrate API Sidecar and the custom block ingest service as Docker containers.
+To run the dotlake-sidecar, use the provided `dotlakeIngest.sh` script. This script sets up both the Substrate API Sidecar and the custom block ingest service as Docker containers, using `config.yaml` for deployment configuration.
 
 Example usage:
 
-If you wish to start the ingest service for polkadot, you can use the following command:
+To start the ingest service for polkadot, use the following command:
 
 ```
-sh dotlakeIngest.sh --chain polkadot --relay-chain polkadot --wss wss://rpc.ibp.network/polkadot
+sh dotlakeIngest.sh
 ```
-
-
