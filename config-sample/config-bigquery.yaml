@@ -1,0 +1,9 @@
+relay_chain: Polkadot
+chain: Hydration
+wss: wss://hydradx-rpc.dwellir.com
+databases:
+  - type: bigquery
+    project_id: parity-data-infra-evaluation
+    credentials_path: /Users/pranaypatil/Downloads/parity-data-infra-evaluation-1d7b2ec60ac2.json
+    dataset: pranay_playground
+    table: blocks_hydration

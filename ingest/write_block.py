@@ -68,33 +68,14 @@ def writeBlock(request, database_info):
     #TODO: Write to duckDB  https://duckdb.org/docs/guides/python/install 
 
     try:
-            if database_info['database'] == 'postgres':
-                from postgres_utils import connect_to_postgres, close_connection, insert_block_data
-                db_connection = connect_to_postgres(database_info['database_host'], database_info['database_port'], database_info['database_name'], database_info['database_user'], database_info['database_password'])
-                insert_block_data(db_connection, block_data, chain_name, relay_chain)
-                print(f"Successfully inserted block {block_id} into Postgres")
-                close_connection(db_connection)
-            elif database_info['database'] == 'mysql':
-                from mysql_utils import connect_to_mysql, close_connection, insert_block_data
-                db_connection = connect_to_mysql(database_info['database_host'], database_info['database_port'], database_info['database_name'], database_info['database_user'], database_info['database_password'])
-                insert_block_data(db_connection, block_data, chain_name, relay_chain)
-                print(f"Successfully inserted block {block_id} into MySQL")
-                close_connection(db_connection)
-            elif database_info['database'] == 'duckdb':
-                from duckdb_utils import connect_to_db, close_connection, insert_block
-                db_connection = connect_to_db(database_info['db_path'])
-                insert_block(db_connection, block_data)
-                print(f"Successfully inserted block {block_id} into DuckDB")
-                close_connection(db_connection)
-            elif database_info['database'] == 'bigquery':
-                from bigquery_utils import connect_to_bigquery, insert_block
-                db_connection = connect_to_bigquery(database_info['database_project'], database_info['database_cred_path'])
-                insert_block(db_connection, database_info['database_dataset'], database_info['database_table'], block_data)
-                print(f"Successfully inserted block {block_id} into BigQuery")
+        from database_utils import connect_to_database, insert_block_data, close_connection
+        
+        db_connection = connect_to_database(database_info)
+        insert_block_data(database_info , db_connection, block_data, chain_name, relay_chain)
+        print(f"Successfully inserted block {block_id} into {database_info['database']}")
+        close_connection(db_connection, database_info)
     except Exception as e:
-        print(f"Error inserting block {block_id} into DuckDB: {str(e)}")
+        print(f"Error inserting block {block_id} into {database_info['database']}: {str(e)}")
         return False
-    
 
     return True
-

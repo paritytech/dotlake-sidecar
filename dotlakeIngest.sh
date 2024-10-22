@@ -12,11 +12,12 @@ CHAIN=$(yq eval '.chain' config.yaml)
 WSS=$(yq eval '.wss' config.yaml)
 
 # Database configuration
-DB_HOST=$(yq eval '.database.host' config.yaml)
-DB_PORT=$(yq eval '.database.port' config.yaml)
-DB_NAME=$(yq eval '.database.name' config.yaml)
-DB_USER=$(yq eval '.database.user' config.yaml)
-DB_PASSWORD=$(yq eval '.database.password' config.yaml)
+DB_TYPE=$(yq eval '.databases[0].type' config.yaml)
+DB_HOST=$(yq eval '.databases[0].host' config.yaml)
+DB_PORT=$(yq eval '.databases[0].port' config.yaml)
+DB_NAME=$(yq eval '.databases[0].name' config.yaml)
+DB_USER=$(yq eval '.databases[0].user' config.yaml)
+DB_PASSWORD=$(yq eval '.databases[0].password' config.yaml)
 DB_PROJECT=$(yq eval '.databases[0].project_id' config.yaml)
 DB_CRED_PATH=$(yq eval '.databases[0].credentials_path' config.yaml)
 DB_DATASET=$(yq eval '.databases[0].dataset' config.yaml)
@@ -24,7 +25,7 @@ DB_TABLE=$(yq eval '.databases[0].table' config.yaml)
 
 # Start Substrate API Sidecar
 echo "Starting Substrate API Sidecar..."
-docker run -d --rm --read-only -e SAS_SUBSTRATE_URL="$WSS" -p 8080:8080 parity/substrate-api-sidecar:latest
+docker run -d --rm --read-only -e SAS_SUBSTRATE_URL="$WSS" -p 8080:8080 --name dotlake_sidecar_instance parity/substrate-api-sidecar:latest
 if [ $? -eq 0 ]; then
     echo "Substrate API Sidecar started successfully."
 else
@@ -35,9 +36,11 @@ fi
 # Start Block Ingest Service
 echo "Starting Block Ingest Service..."
 docker run -d --rm \
+    --name dotlake_ingest \
     -e CHAIN="$CHAIN" \
     -e RELAY_CHAIN="$RELAY_CHAIN" \
     -e WSS="$WSS" \
+    -e DB_TYPE="$DB_TYPE" \
     -e DB_HOST="$DB_HOST" \
     -e DB_PORT="$DB_PORT" \
     -e DB_NAME="$DB_NAME" \
@@ -54,3 +57,26 @@ fi
 echo "Starting the services....this will take a minute...."
 sleep 60
 echo "Both services are now running. You can access Substrate API Sidecar at http://localhost:8080 and Block Ingest Service at http://localhost:8501"
+
+# Create SQLAlchemy URI for Postgres or MySQL
+if [[ $(yq eval '.databases[0].type' config.yaml) == "postgres" ]]; then
+    SQLALCHEMY_URI="postgres+psycopg2://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+elif [[ $(yq eval '.databases[0].type' config.yaml) == "mysql" ]]; then
+    SQLALCHEMY_URI="mysql+mysqldb://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+else
+    echo "Unsupported database type. Only postgres and mysql are supported."
+    exit 1
+fi
+
+echo "SQLAlchemy URI created: ${SQLALCHEMY_URI}"
+
+# Start Superset locally
+echo "Starting Superset..."
+cd superset-local
+sh start_superset.sh "$SQLALCHEMY_URI"
+if [ $? -eq 0 ]; then
+    echo "Superset started successfully."
+else
+    echo "Failed to start Superset."
+    exit 1
+fi

@@ -1,0 +1,10 @@
+relay_chain: Polkadot
+chain: Hydration
+wss: wss://hydradx-rpc.dwellir.com
+databases:
+  - type: postgres
+    host: xx.xx.xx.xx
+    port: 5432
+    name: dotlake_sidecar_poc
+    user: ******
+    password: *****

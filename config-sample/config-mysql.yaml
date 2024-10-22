@@ -3,10 +3,8 @@ chain: Hydration
 wss: wss://hydradx-rpc.dwellir.com
 databases:
   - type: mysql
-    host: 35.198.89.114
+    host: xx.xx.xx.xx
     port: 3306
     name: dotlake_sidecar_poc
-    user: pranay
-    password: mysqlPassword
-  # - type: duckdb
-  #   path: /path/to/duckdb/database
+    user: *****
+    password: ******

@@ -6,6 +6,7 @@ import requests
 import traceback
 import subprocess
 from write_block import writeBlock
+from database_utils import *
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Block ingestion script for Substrate-based chains")
@@ -46,34 +47,13 @@ def main():
     }
 
     # Connect to the database
-    if args.database == 'postgres':
-        from postgres_utils import connect_to_postgres, close_connection, create_tables
-        db_connection = connect_to_postgres(args.db_host, args.db_port, args.db_name, args.db_user, args.db_password)
-        create_tables(db_connection, args.chain, args.relay_chain)
-        close_connection(db_connection)
-    elif args.database == 'mysql':
-        from mysql_utils import connect_to_mysql, close_connection, create_tables
-        db_connection = connect_to_mysql(args.db_host, args.db_port, args.db_name, args.db_user, args.db_password)
-        if db_connection:
-            create_tables(db_connection, args.chain, args.relay_chain)
-            close_connection(db_connection)
-            print(f"Connected to MySQL and created tables for {args.chain} on {args.relay_chain}")
-        else:
-            print("Failed to connect to MySQL database")
-    elif args.database == 'duckdb':
-        from duckdb_utils import connect_to_db, close_connection, create_blocks_table
-        db_connection = connect_to_db(args.db_path)
-        create_blocks_table(db_connection, args.chain, args.relay_chain)
-        close_connection(db_connection)
-    elif args.database == 'bigquery':
-        from bigquery_utils import connect_to_bigquery, create_blocks_table
-        db_connection = connect_to_bigquery(args.db_project, args.db_cred_path)
-        create_blocks_table(db_connection, args.db_dataset, args.db_table)
-        print(f"Connected to {args.database} and created {args.db_dataset}.{args.db_table} for {args.chain} on {args.relay_chain}")
+    db_connection = connect_to_database(database_info)
+    create_tables(db_connection, database_info, args.chain, args.relay_chain)
+    close_connection(db_connection, database_info)
+    print(f"Connected to {args.database} and created tables for {args.chain} on {args.relay_chain}")
 
-
-    # sidecar_url = "http://172.17.0.1:8080"
-    sidecar_url = "http://localhost:8080"
+    sidecar_url = "http://172.17.0.1:8080"
+    # sidecar_url = "http://localhost:8080"
     last_block = -1
 
     while True:
@@ -99,7 +79,7 @@ def main():
                         "bucket": "test-polka-data"
                     }
                     # Attempt to write the block, retry if unsuccessful
-                    write_status = writeBlock(block_write_request, args.db_path)
+                    write_status = writeBlock(block_write_request, database_info)
                     while not write_status:
                         write_status = writeBlock(block_write_request, database_info)
                     print(f"Processed block {block_id}")
@@ -110,29 +90,9 @@ def main():
                 print("Failed to fetch chain head. Retrying in 6 seconds.")
             
             # Fetch the latest block number from the database
-            if args.database == 'postgres':
-                from postgres_utils import connect_to_postgres, close_connection, query
-                db_connection = connect_to_postgres(args.db_host, args.db_port, args.db_name, args.db_user, args.db_password)
-                fetch_last_block_query = f"SELECT number FROM blocks_{args.relay_chain}_{args.chain} ORDER BY number DESC LIMIT 1"
-                df = query(db_connection, fetch_last_block_query)
-                close_connection(db_connection)
-            elif args.database == 'mysql':
-                from mysql_utils import connect_to_mysql, close_connection, query_block_data
-                db_connection = connect_to_mysql(args.db_host, args.db_port, args.db_name, args.db_user, args.db_password)
-                fetch_last_block_query = f"SELECT number FROM blocks_{args.relay_chain}_{args.chain} ORDER BY number DESC LIMIT 1"
-                df = query_block_data(db_connection, fetch_last_block_query)
-                close_connection(db_connection)
-            elif args.database == 'duckdb':
-                from duckdb_utils import connect_to_db, close_connection, query
-                db_connection = connect_to_db(args.db_path)
-                fetch_last_block_query = f"SELECT number FROM blocks_{args.relay_chain}_{args.chain} ORDER BY number DESC LIMIT 1"
-                df = query(db_connection, fetch_last_block_query)
-                close_connection(db_connection)
-            elif args.database == 'bigquery':
-                from bigquery_utils import connect_to_bigquery, query
-                db_connection = connect_to_bigquery(args.db_project, args.db_cred_path)
-                fetch_last_block_query = f"SELECT number FROM {args.db_dataset}.{args.db_table} ORDER BY number DESC LIMIT 1"
-                df = query(db_connection, fetch_last_block_query)
+            db_connection = connect_to_database(database_info)
+            df = query_last_block(db_connection, database_info, args.chain, args.relay_chain)
+            close_connection(db_connection, database_info)
 
             last_block = int(df['number'].iloc[0])
         except Exception as e:

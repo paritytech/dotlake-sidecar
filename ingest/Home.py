@@ -6,6 +6,7 @@ import json
 import time
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
+from database_utils import connect_to_database, close_connection, query_recent_blocks
 
 # Function to connect to DuckDB
 def connect_to_db(db_path='blocks.db'):
@@ -33,6 +34,20 @@ def parse_arguments():
 
 args = parse_arguments()
 
+database_info = {
+        'database': args.database,
+        'database_project': args.db_project,
+        'database_dataset': args.db_dataset,
+        'database_table': args.db_table,
+        'database_cred_path': args.db_cred_path,
+        'database_path': args.db_path,
+        'database_host': args.db_host,
+        'database_port': args.db_port,
+        'database_user': args.db_user,
+        'database_password': args.db_password,
+        'database_name': args.db_name
+    }
+
 st.set_page_config(
     page_title="Dotlake Explorer",
     page_icon="🚀",
@@ -51,29 +66,10 @@ with placeholder.container():
 
     try:
 
-        if args.database == 'postgres':
-            from postgres_utils import connect_to_postgres, close_connection, query
-            db_connection = connect_to_postgres(args.db_host, args.db_port, args.db_name, args.db_user, args.db_password)
-            fetch_last_block_query = f"SELECT * FROM blocks_{args.relay_chain}_{args.chain} ORDER BY number DESC LIMIT 50"
-            recent_blocks = query(db_connection, fetch_last_block_query)
-            close_connection(db_connection)
-        elif args.database == 'mysql':
-            from mysql_utils import connect_to_mysql, close_connection, query_block_data
-            db_connection = connect_to_mysql(args.db_host, args.db_port, args.db_name, args.db_user, args.db_password)
-            fetch_last_block_query = f"SELECT * FROM blocks_{args.relay_chain}_{args.chain} ORDER BY number DESC LIMIT 50"
-            recent_blocks = query_block_data(db_connection, fetch_last_block_query)
-            close_connection(db_connection)
-        elif args.database == 'duckdb':
-            from duckdb_utils import connect_to_db, close_connection, query
-            db_connection = connect_to_db(args.db_path)
-            fetch_last_block_query = f"SELECT * FROM blocks_{args.relay_chain}_{args.chain} ORDER BY number DESC LIMIT 50"
-            recent_blocks = query(db_connection, fetch_last_block_query)
-            close_connection(db_connection)
-        elif args.database == 'bigquery':
-            from bigquery_utils import connect_to_bigquery, query
-            db_connection = connect_to_bigquery(args.db_project, args.db_cred_path)
-            fetch_last_block_query = f"SELECT * FROM {args.db_dataset}.{args.db_table} ORDER BY number DESC LIMIT 50"
-            recent_blocks = query(db_connection, fetch_last_block_query)
+        db_connection = connect_to_database(database_info)
+        fetch_last_block_query = f"SELECT * FROM blocks_{args.relay_chain}_{args.chain} ORDER BY number DESC LIMIT 50"
+        recent_blocks = query_recent_blocks(db_connection, database_info, chain, relay_chain)
+        close_connection(db_connection, database_info)
 
         recent_blocks['timestamp'] = recent_blocks['timestamp'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime("%Y-%m-%d %H:%M:%S") )
 
