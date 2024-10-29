@@ -10,3 +10,6 @@ databases:
     password: mysqlPassword
   # - type: duckdb
   #   path: /path/to/duckdb/database
+ingest_mode: live  # live/historical
+start_block: 1
+end_block: 100

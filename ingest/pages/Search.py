@@ -64,17 +64,16 @@ if block_number:
         from database_utils import connect_to_database, close_connection, query_last_block
 
         db_connection = connect_to_database(database_info)
-        fetch_last_block_query = f"SELECT * FROM blocks_{args.relay_chain}_{args.chain} WHERE number = '{block_number}' LIMIT 1"
+        # fetch_last_block_query = f"SELECT * FROM blocks_{args.relay_chain}_{args.chain} WHERE number = {block_number} LIMIT 1"
         result = query_last_block(db_connection, database_info, args.chain, args.relay_chain, block_number)
         close_connection(db_connection, database_info)
-
 
         if not result.empty:
             st.subheader(f"Block Details: {block_number}")
             
             # Display basic block information
             st.write("Basic Information:")
-            basic_info = result[['number', 'hash', 'parentHash', 'stateRoot', 'extrinsicsRoot', 'authorId', 'timestamp', 'finalized']]
+            basic_info = result[['number', 'hash', 'parenthash', 'stateroot', 'extrinsicsroot', 'authorid', 'timestamp', 'finalized']]
             data = np.array([basic_info.columns, basic_info.iloc[0].to_list()])
             data = data.transpose()
             data_df = pd.DataFrame(data)
@@ -82,7 +81,9 @@ if block_number:
 
             # Display extrinsics
             st.write("Extrinsics:")
-            if args.database == 'postgres' or args.database == 'mysql':
+            if args.database == 'postgres':
+                extrinsics = pd.DataFrame(result['extrinsics'].iloc[0])
+            elif args.database == 'mysql':
                 extrinsics = pd.DataFrame(json.loads(result['extrinsics'].iloc[0]))
             elif args.database == 'duckdb':
                 extrinsics = pd.DataFrame(result['extrinsics'].iloc[0])
@@ -94,11 +95,16 @@ if block_number:
 
             # Display events
             st.write("Events:")
-            if args.database == 'postgres' or args.database == 'mysql':
+            if args.database == 'postgres':
+                events = [
+                    event for extrinsic in result['extrinsics'].iloc[0]
+                    for event in extrinsic['events']
+                ] + result['oninitialize'].iloc[0]['events'] + result['onfinalize'].iloc[0]['events']
+            elif args.database == 'mysql':
                 events = [
                     event for extrinsic in json.loads(result['extrinsics'].iloc[0])
                     for event in extrinsic['events']
-                ] + json.loads(result['onInitialize'].iloc[0])['events'] + json.loads(result['onFinalize'].iloc[0])['events']
+                ] + json.loads(result['oninitialize'].iloc[0])['events'] + json.loads(result['onfinalize'].iloc[0])['events']
             elif args.database == 'duckdb':
                 events = [
                     event for extrinsic in result['extrinsics'].iloc[0]

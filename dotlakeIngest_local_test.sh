@@ -10,6 +10,9 @@ fi
 RELAY_CHAIN=$(yq eval '.relay_chain' config.yaml)
 CHAIN=$(yq eval '.chain' config.yaml)
 WSS=$(yq eval '.wss' config.yaml)
+INGEST_MODE=$(yq eval '.ingest_mode' config.yaml)
+START_BLOCK=$(yq eval '.start_block' config.yaml)
+END_BLOCK=$(yq eval '.end_block' config.yaml)
 
 # Database configuration
 DB_TYPE=$(yq eval '.databases[0].type' config.yaml)
@@ -39,7 +42,7 @@ echo "Database Password: $DB_PASSWORD"
 echo "Database Name: $DB_NAME"
 
 
-# # Start Substrate API Sidecar
+# Start Substrate API Sidecar
 # echo "Starting Substrate API Sidecar..."
 # docker run -d --rm --read-only -e SAS_SUBSTRATE_URL="$WSS" -p 8080:8080 parity/substrate-api-sidecar:latest
 # if [ $? -eq 0 ]; then
@@ -53,7 +56,7 @@ cd ingest/
 
 # Start the main.py script
 echo "Starting main.py script..."
-/usr/bin/python3 main.py --chain "$CHAIN" --relay_chain "$RELAY_CHAIN" --wss "$WSS" --db_path "$DB_PATH" --database "$DB_TYPE" --db_project "$DB_PROJECT" --db_cred_path "$DB_CRED_PATH" --db_dataset "$DB_DATASET" --db_table "$DB_TABLE" --db_host "$DB_HOST" --db_port "$DB_PORT" --db_user "$DB_USER" --db_password "$DB_PASSWORD" --db_name "$DB_NAME" &
+/usr/bin/python3 main.py --chain "$CHAIN" --relay_chain "$RELAY_CHAIN" --wss "$WSS" --db_path "$DB_PATH" --database "$DB_TYPE" --db_project "$DB_PROJECT" --db_cred_path "$DB_CRED_PATH" --db_dataset "$DB_DATASET" --db_table "$DB_TABLE" --db_host "$DB_HOST" --db_port "$DB_PORT" --db_user "$DB_USER" --db_password "$DB_PASSWORD" --db_name "$DB_NAME" --ingest_mode "$INGEST_MODE" --start_block "$START_BLOCK" --end_block "$END_BLOCK" &
 
 sleep 15
 

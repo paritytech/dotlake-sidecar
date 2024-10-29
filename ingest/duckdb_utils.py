@@ -34,10 +34,10 @@ def create_blocks_table(conn, chain, relay_chain):
         timestamp INTEGER ,
         number STRING ,
         hash STRING ,
-        parentHash STRING ,
-        stateRoot STRING ,
-        extrinsicsRoot STRING ,
-        authorId STRING ,
+        parenthash STRING ,  # Changed to lowercase
+        stateroot STRING ,   # Changed to lowercase
+        extrinsicsroot STRING ,  # Changed to lowercase
+        authorid STRING ,    # Changed to lowercase
         finalized BOOLEAN ,
         extrinsics STRUCT(
             method STRUCT(
@@ -56,7 +56,7 @@ def create_blocks_table(conn, chain, relay_chain):
             hash STRING ,
             info STRING ,
             era STRUCT(
-                immortalEra STRING
+                immortalera STRING  # Changed to lowercase
             ),
             events STRUCT(
                 method STRUCT(
@@ -66,9 +66,9 @@ def create_blocks_table(conn, chain, relay_chain):
                 data STRING 
             )[],
             success BOOLEAN ,
-            paysFee BOOLEAN 
+            paysfee BOOLEAN  # Changed to lowercase
         )[],
-        onInitialize STRUCT(
+        oninitialize STRUCT(  # Changed to lowercase
             events STRUCT(
                 method STRUCT(
                     pallet STRING ,
@@ -77,7 +77,7 @@ def create_blocks_table(conn, chain, relay_chain):
                 data STRING 
             )[]
         ),
-        onFinalize STRUCT(
+        onfinalize STRUCT(  # Changed to lowercase
             events STRUCT(
                 method STRUCT(
                     pallet STRING ,
@@ -92,7 +92,6 @@ def create_blocks_table(conn, chain, relay_chain):
             value STRING 
         )[]
     );
-
     """)
 
 def insert_block(conn, block_data):
@@ -179,7 +178,7 @@ def insert_block(conn, block_data):
     # Execute the INSERT statement
     conn.execute(f"""
         INSERT INTO blocks_{block_data['relay_chain']}_{block_data['chain']} 
-        (relay_chain, chain, timestamp, number, hash, parentHash, stateRoot, extrinsicsRoot, authorId, finalized, extrinsics, onInitialize, onFinalize, logs)
+        (relay_chain, chain, timestamp, number, hash, parenthash, stateroot, extrinsicsroot, authorid, finalized, extrinsics, oninitialize, onfinalize, logs)  # Changed to lowercase
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         block_data['relay_chain'],

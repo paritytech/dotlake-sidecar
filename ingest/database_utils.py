@@ -100,9 +100,10 @@ def query_last_block(db_connection, database_info: Dict[str, Any], chain: str, r
     else:
         if database_info['database'] == 'bigquery':
             fetch_last_block_query = f"SELECT * FROM {database_info['database_dataset']}.{database_info['database_table']} WHERE number={block_num} LIMIT 1"
+        elif database_info['database'] == 'postgres':
+            fetch_last_block_query = f"SELECT * FROM blocks_{relay_chain}_{chain} WHERE number='{block_num}' LIMIT 1"
         else:
             fetch_last_block_query = f"SELECT * FROM blocks_{relay_chain}_{chain} WHERE number={block_num} LIMIT 1"
-
     return query(db_connection, fetch_last_block_query)
 
 def query_recent_blocks(db_connection, database_info: Dict[str, Any], chain: str, relay_chain: str):

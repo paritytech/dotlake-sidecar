@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  sidecar:
+    container_name: dotlake_sidecar_instance
+    image: parity/substrate-api-sidecar:latest
+    read_only: true
+    environment:
+      - SAS_SUBSTRATE_URL=${WSS}
+    ports:
+      - "8080:8080"
+    # networks:
+    #   - dotlake_network
+
+  app:
+    container_name: subindex-ingest
+    image: python:3.9-slim
+    working_dir: /app
+    # networks:
+    #   - dotlake_network
+    ports:
+      - "8501:8501"
+    environment:
+      - RELAY_CHAIN=${RELAY_CHAIN}
+      - CHAIN=${CHAIN}
+      - WSS=${WSS}
+      - DB_TYPE=${DB_TYPE}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - PROJECT_ID=${PROJECT_ID}
+      - CREDENTIALS_PATH=${CREDENTIALS_PATH}
+      - DATASET=${DATASET}
+      - TABLE=${TABLE}
+    volumes:
+      - .:/app
+    command: ["sh", "-c", "chmod +x ./start-ingest.sh && pip install -r requirements.txt && ./start-ingest.sh"]

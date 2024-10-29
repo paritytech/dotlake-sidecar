@@ -50,14 +50,14 @@ def create_tables(connection, chain, relay_chain):
                 timestamp BIGINT,
                 number VARCHAR(255) PRIMARY KEY,
                 hash VARCHAR(255),
-                parentHash VARCHAR(255),
-                stateRoot VARCHAR(255),
-                extrinsicsRoot VARCHAR(255),
-                authorId VARCHAR(255),
+                parenthash VARCHAR(255),
+                stateroot VARCHAR(255),
+                extrinsicsroot VARCHAR(255),
+                authorid VARCHAR(255),
                 finalized BOOLEAN,
                 extrinsics JSON,
-                onFinalize JSON,
-                onInitialize JSON,
+                onfinalize JSON,
+                oninitialize JSON,
                 logs JSON
             )
         """)
@@ -90,7 +90,7 @@ def insert_block_data(connection, block_data, chain_name, relay_chain):
         
         # Insert block data
         block_insert_query = f"""
-        INSERT INTO blocks_{relay_chain}_{chain_name} (relay_chain, chain, timestamp, number, hash, parentHash, stateRoot, extrinsicsRoot, authorId, finalized, extrinsics, onFinalize, onInitialize, logs)
+        INSERT INTO blocks_{relay_chain}_{chain_name} (relay_chain, chain, timestamp, number, hash, parenthash, stateroot, extrinsicsroot, authorid, finalized, extrinsics, onfinalize, oninitialize, logs)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         block_values = (

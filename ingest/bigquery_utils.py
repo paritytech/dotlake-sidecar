@@ -40,10 +40,10 @@ def create_blocks_table(client, dataset_id, table_id):
         bigquery.SchemaField("timestamp", "INTEGER", mode="REQUIRED"),
         bigquery.SchemaField("number", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("hash", "STRING", mode="REQUIRED"),
-        bigquery.SchemaField("parentHash", "STRING", mode="REQUIRED"),
-        bigquery.SchemaField("stateRoot", "STRING", mode="REQUIRED"),
-        bigquery.SchemaField("extrinsicsRoot", "STRING", mode="REQUIRED"),
-        bigquery.SchemaField("authorId", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("parenthash", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("stateroot", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("extrinsicsroot", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("authorid", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("finalized", "BOOLEAN", mode="REQUIRED"),
         bigquery.SchemaField("extrinsics", "RECORD", mode="REPEATED", fields=[
             bigquery.SchemaField("method", "RECORD", fields=[
@@ -60,8 +60,8 @@ def create_blocks_table(client, dataset_id, table_id):
             bigquery.SchemaField("hash", "STRING"),
             bigquery.SchemaField("info", "STRING"),
             bigquery.SchemaField("era", "RECORD", fields=[
-                bigquery.SchemaField("immortalEra", "STRING"),
-                bigquery.SchemaField("mortalEra", "STRING", mode='REPEATED')
+                bigquery.SchemaField("immortalera", "STRING"),
+                bigquery.SchemaField("mortalera", "STRING", mode='REPEATED')
             ]),
             bigquery.SchemaField("events", "RECORD", mode='REPEATED', fields=[
                 bigquery.SchemaField("method", "RECORD", fields=[
@@ -71,9 +71,9 @@ def create_blocks_table(client, dataset_id, table_id):
                 bigquery.SchemaField("data", "STRING")
             ]),
             bigquery.SchemaField("success", "BOOLEAN"),
-            bigquery.SchemaField("paysFee", "BOOLEAN"),
+            bigquery.SchemaField("paysfee", "BOOLEAN"),
         ]),
-        bigquery.SchemaField("onFinalize", "RECORD", fields=[
+        bigquery.SchemaField("onfinalize", "RECORD", fields=[
             bigquery.SchemaField("events", "RECORD", mode='REPEATED', fields=[
                 bigquery.SchemaField("method", "RECORD", fields=[
                     bigquery.SchemaField("pallet", "STRING"),
@@ -82,7 +82,7 @@ def create_blocks_table(client, dataset_id, table_id):
                 bigquery.SchemaField("data", "STRING")
             ]),
         ]),
-        bigquery.SchemaField("onInitialize", "RECORD", fields=[
+        bigquery.SchemaField("oninitialize", "RECORD", fields=[
             bigquery.SchemaField("events", "RECORD", mode='REPEATED', fields=[
                 bigquery.SchemaField("method", "RECORD", fields=[
                     bigquery.SchemaField("pallet", "STRING"),

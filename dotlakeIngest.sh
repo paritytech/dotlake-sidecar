@@ -10,6 +10,9 @@ fi
 RELAY_CHAIN=$(yq eval '.relay_chain' config.yaml)
 CHAIN=$(yq eval '.chain' config.yaml)
 WSS=$(yq eval '.wss' config.yaml)
+INGEST_MODE=$(yq eval '.ingest_mode' config.yaml)
+START_BLOCK=$(yq eval '.start_block' config.yaml)
+END_BLOCK=$(yq eval '.end_block' config.yaml)
 
 # Database configuration
 DB_TYPE=$(yq eval '.databases[0].type' config.yaml)
@@ -46,7 +49,10 @@ docker run -d --rm \
     -e DB_NAME="$DB_NAME" \
     -e DB_USER="$DB_USER" \
     -e DB_PASSWORD="$DB_PASSWORD" \
-    -p 8501:8501 eu.gcr.io/parity-data-infra-evaluation/block-ingest:0.2.1
+    -e INGEST_MODE="$INGEST_MODE" \
+    -e START_BLOCK="$START_BLOCK" \
+    -e END_BLOCK="$END_BLOCK" \
+    -p 8501:8501 eu.gcr.io/parity-data-infra-evaluation/block-ingest:0.2.2
 if [ $? -eq 0 ]; then
     echo "Block Ingest Service started successfully."
 else

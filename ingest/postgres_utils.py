@@ -52,13 +52,13 @@ def create_tables(connection, chain, relay_chain):
                 timestamp BIGINT,
                 number VARCHAR(255) PRIMARY KEY,
                 hash VARCHAR(255),
-                parentHash VARCHAR(255),
-                stateRoot VARCHAR(255),
-                extrinsicsRoot VARCHAR(255),
-                authorId VARCHAR(255),
+                parenthash VARCHAR(255),
+                stateroot VARCHAR(255),
+                extrinsicsroot VARCHAR(255),
+                authorid VARCHAR(255),
                 finalized BOOLEAN,
-                onInitialize JSONB,
-                onFinalize JSONB,
+                oninitialize JSONB,
+                onfinalize JSONB,
                 logs JSONB,
                 extrinsics JSONB
             )
@@ -83,20 +83,20 @@ def insert_block_data(connection, block_data, chain, relay_chain):
         
         insert_query = f"""
         INSERT INTO blocks_{relay_chain}_{chain} 
-        (relay_chain, chain, timestamp, number, hash, parentHash, stateRoot, extrinsicsRoot, authorId, finalized, onInitialize, onFinalize, logs, extrinsics)
+        (relay_chain, chain, timestamp, number, hash, parenthash, stateroot, extrinsicsroot, authorid, finalized, oninitialize, onfinalize, logs, extrinsics)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (number) DO UPDATE SET
         relay_chain = EXCLUDED.relay_chain,
         chain = EXCLUDED.chain,
         timestamp = EXCLUDED.timestamp,
         hash = EXCLUDED.hash,
-        parentHash = EXCLUDED.parentHash,
-        stateRoot = EXCLUDED.stateRoot,
-        extrinsicsRoot = EXCLUDED.extrinsicsRoot,
-        authorId = EXCLUDED.authorId,
+        parenthash = EXCLUDED.parenthash,
+        stateroot = EXCLUDED.stateroot,
+        extrinsicsroot = EXCLUDED.extrinsicsroot,
+        authorid = EXCLUDED.authorid,
         finalized = EXCLUDED.finalized,
-        onInitialize = EXCLUDED.onInitialize,
-        onFinalize = EXCLUDED.onFinalize,
+        oninitialize = EXCLUDED.oninitialize,
+        onfinalize = EXCLUDED.onfinalize,
         logs = EXCLUDED.logs,
         extrinsics = EXCLUDED.extrinsics
         """

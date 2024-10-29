@@ -95,7 +95,9 @@ with placeholder.container():
         extrinsics_col, events_col = st.columns(2)
 
         # Display the number of extrinsics in the most recent block
-        if args.database == 'postgres' or args.database == 'mysql':
+        if args.database == 'postgres':
+            num_extrinsics = len(recent_blocks['extrinsics'].iloc[0])
+        elif args.database == 'mysql':
             num_extrinsics = len(json.loads(recent_blocks['extrinsics'].iloc[0]))
         elif args.database == 'duckdb':
             num_extrinsics = len(recent_blocks['extrinsics'].iloc[0])
@@ -106,22 +108,28 @@ with placeholder.container():
         extrinsics_col.metric("Extrinsics", num_extrinsics)
 
         # Calculate the total number of events in the most recent block
-        if args.database == 'postgres' or args.database == 'mysql':
+        if args.database == 'postgres':
             num_events = (
-                len(json.loads(recent_blocks['onFinalize'].iloc[0])['events']) +
-                len(json.loads(recent_blocks['onInitialize'].iloc[0])['events']) +
+                len(recent_blocks['onfinalize'].iloc[0]['events']) +
+                len(recent_blocks['oninitialize'].iloc[0]['events']) +
+                sum(len(ex['events']) for ex in recent_blocks['extrinsics'].iloc[0])
+            )
+        elif args.database == 'mysql':
+            num_events = (
+                len(json.loads(recent_blocks['onfinalize'].iloc[0])['events']) +
+                len(json.loads(recent_blocks['oninitialize'].iloc[0])['events']) +
                 sum(len(ex['events']) for ex in json.loads(recent_blocks['extrinsics'].iloc[0]))
             )
         elif args.database == 'duckdb':
             num_events = (
-                len(recent_blocks['onFinalize'].iloc[0]['events']) +
-                len(recent_blocks['onInitialize'].iloc[0]['events']) +
+                len(recent_blocks['onfinalize'].iloc[0]['events']) +
+                len(recent_blocks['oninitialize'].iloc[0]['events']) +
                 sum(len(ex['events']) for ex in recent_blocks['extrinsics'].iloc[0])
             )
         elif args.database == 'bigquery':
             num_events = (
-                len(json.loads(recent_blocks['onFinalize'].iloc[0])['events']) +
-                len(json.loads(recent_blocks['onInitialize'].iloc[0])['events']) +
+                len(json.loads(recent_blocks['onfinalize'].iloc[0])['events']) +
+                len(json.loads(recent_blocks['oninitialize'].iloc[0])['events']) +
                 sum(len(ex['events']) for ex in json.loads(recent_blocks['extrinsics'].iloc[0]))
             )
         else:
