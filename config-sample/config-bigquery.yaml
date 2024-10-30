@@ -7,3 +7,6 @@ databases:
     credentials_path: /Users/pranaypatil/Downloads/parity-data-infra-evaluation-1d7b2ec60ac2.json
     dataset: pranay_playground
     table: blocks_hydration
+ingest_mode: live  # live/historical
+start_block: 1
+end_block: 100

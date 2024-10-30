@@ -8,3 +8,6 @@ databases:
     name: dotlake_sidecar_poc
     user: ******
     password: *****
+ingest_mode: live  # live/historical
+start_block: 1
+end_block: 100
