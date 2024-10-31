@@ -62,11 +62,6 @@ def writeBlock(request, database_info):
     if block_data['finalized'] is not True and block_data['finalized'] is not False:
         return False
 
-
-    #TODO: Write to BigQuery
-    #TODO: Write to S3
-    #TODO: Write to duckDB  https://duckdb.org/docs/guides/python/install 
-
     try:
         from database_utils import connect_to_database, insert_block_data, close_connection
         

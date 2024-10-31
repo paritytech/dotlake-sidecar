@@ -3,11 +3,11 @@ chain: Hydration
 wss: wss://hydradx-rpc.dwellir.com
 databases:
   - type: mysql
-    host: **.**.**.**
+    host: 35.198.89.114
     port: 3306
-    name: ****
-    user: ****
-    password: ***
+    name: dotlake_sidecar_poc
+    user: pranay
+    password: mysqlPassword
 ingest_mode: live  # live/historical
 start_block: 1
 end_block: 100

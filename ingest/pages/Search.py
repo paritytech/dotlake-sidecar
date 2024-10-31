@@ -1,12 +1,9 @@
 import streamlit as st
-import duckdb
 import pandas as pd
 import numpy as np
 import argparse
 import json
 
-def connect_to_db(db_path='blocks.db'):
-    return duckdb.connect(db_path, read_only=True)
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Block ingestion script for Substrate-based chains")
@@ -85,8 +82,6 @@ if block_number:
                 extrinsics = pd.DataFrame(result['extrinsics'].iloc[0])
             elif args.database == 'mysql':
                 extrinsics = pd.DataFrame(json.loads(result['extrinsics'].iloc[0]))
-            elif args.database == 'duckdb':
-                extrinsics = pd.DataFrame(result['extrinsics'].iloc[0])
             elif args.database == 'bigquery':
                 extrinsics = pd.DataFrame(json.loads(result['extrinsics'].iloc[0]))
             else:
@@ -105,11 +100,6 @@ if block_number:
                     event for extrinsic in json.loads(result['extrinsics'].iloc[0])
                     for event in extrinsic['events']
                 ] + json.loads(result['oninitialize'].iloc[0])['events'] + json.loads(result['onfinalize'].iloc[0])['events']
-            elif args.database == 'duckdb':
-                events = [
-                    event for extrinsic in result['extrinsics'].iloc[0]
-                    for event in extrinsic['events']
-                ] + result['oninitialize'].iloc[0]['events'] + result['onfinalize'].iloc[0]['events']
             elif args.database == 'bigquery':
                 events = [
                     event for extrinsic in json.loads(result['extrinsics'].iloc[0])

@@ -26,43 +26,6 @@ DB_CRED_PATH=$(yq eval '.databases[0].credentials_path' config.yaml)
 DB_DATASET=$(yq eval '.databases[0].dataset' config.yaml)
 DB_TABLE=$(yq eval '.databases[0].table' config.yaml)
 
-# Start Substrate API Sidecar
-echo "Starting Substrate API Sidecar..."
-docker run -d --rm --read-only -e SAS_SUBSTRATE_URL="$WSS" -p 8080:8080 --name dotlake_sidecar_instance parity/substrate-api-sidecar:latest
-if [ $? -eq 0 ]; then
-    echo "Substrate API Sidecar started successfully."
-else
-    echo "Failed to start Substrate API Sidecar."
-    exit 1
-fi
-
-# Start Block Ingest Service
-echo "Starting Block Ingest Service..."
-docker run -d --rm \
-    --name dotlake_ingest \
-    -e CHAIN="$CHAIN" \
-    -e RELAY_CHAIN="$RELAY_CHAIN" \
-    -e WSS="$WSS" \
-    -e DB_TYPE="$DB_TYPE" \
-    -e DB_HOST="$DB_HOST" \
-    -e DB_PORT="$DB_PORT" \
-    -e DB_NAME="$DB_NAME" \
-    -e DB_USER="$DB_USER" \
-    -e DB_PASSWORD="$DB_PASSWORD" \
-    -e INGEST_MODE="$INGEST_MODE" \
-    -e START_BLOCK="$START_BLOCK" \
-    -e END_BLOCK="$END_BLOCK" \
-    -p 8501:8501 eu.gcr.io/parity-data-infra-evaluation/block-ingest:0.2.2
-if [ $? -eq 0 ]; then
-    echo "Block Ingest Service started successfully."
-else
-    echo "Failed to start Block Ingest Service."
-    exit 1
-fi
-
-echo "Starting the services....this will take a minute...."
-sleep 60
-echo "Both services are now running. You can access Substrate API Sidecar at http://localhost:8080 and Block Ingest Service at http://localhost:8501"
 
 # Create SQLAlchemy URI for Postgres or MySQL
 if [[ $(yq eval '.databases[0].type' config.yaml) == "postgres" ]]; then
@@ -76,13 +39,52 @@ fi
 
 echo "SQLAlchemy URI created: ${SQLALCHEMY_URI}"
 
-# Start Superset locally
-echo "Starting Superset..."
-cd superset-local
-sh start_superset.sh "$SQLALCHEMY_URI"
+# Start Block Ingest Service
+echo "Starting Block Ingest Service..."
+export RELAY_CHAIN="$RELAY_CHAIN"
+export CHAIN="$CHAIN"
+export WSS="$WSS"
+export DB_TYPE="$DB_TYPE"
+export DB_HOST="$DB_HOST"
+export DB_PORT="$DB_PORT"
+export DB_NAME="$DB_NAME"
+export DB_USER="$DB_USER"
+export DB_PASSWORD="$DB_PASSWORD"
+export PROJECT_ID="$DB_PROJECT"
+export CREDENTIALS_PATH="$DB_CRED_PATH"
+export DATASET="$DB_DATASET"
+export TABLE="$DB_TABLE"
+export SQLALCHEMY_URI="$SQLALCHEMY_URI"
+export INGEST_MODE="$INGEST_MODE"
+export START_BLOCK="$START_BLOCK" 
+export END_BLOCK="$END_BLOCK"
+
+cd ingest
+docker-compose up -d
+sleep 10
+docker exec -it superset superset fab create-admin \
+               --username admin \
+               --firstname Superset \
+               --lastname Admin \
+               --email admin@superset.com \
+               --password admin
+
+docker exec -it superset superset db upgrade
+docker exec -it superset superset set_database_uri -d my_mysql_db -u "$SQLALCHEMY_URI"
+
+cd ..
+
 if [ $? -eq 0 ]; then
-    echo "Superset started successfully."
+    echo "Block Ingest Service started successfully."
 else
-    echo "Failed to start Superset."
+    echo "Failed to start Block Ingest Service."
     exit 1
 fi
+
+echo "Starting the services....this will take couple of minutes...."
+sleep 120
+echo "All services are now running!"
+echo "You can access:"
+echo "  • Substrate API Sidecar: http://localhost:8080"
+echo "  • Block Ingest Service: http://localhost:8501" 
+echo "  • Apache Superset: http://localhost:8088"

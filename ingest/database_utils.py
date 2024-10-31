@@ -19,9 +19,6 @@ def connect_to_database(database_info: Dict[str, Any]):
             database_info['database_user'],
             database_info['database_password']
         )
-    elif database_info['database'] == 'duckdb':
-        from duckdb_utils import connect_to_db
-        return connect_to_db(database_info['database_path'])
     elif database_info['database'] == 'bigquery':
         from bigquery_utils import connect_to_bigquery
         return connect_to_bigquery(database_info['database_project'], database_info['database_cred_path'])
@@ -35,9 +32,6 @@ def create_tables(db_connection, database_info: Dict[str, Any], chain: str, rela
     elif database_info['database'] == 'mysql':
         from mysql_utils import create_tables as create_mysql_tables
         create_mysql_tables(db_connection, chain, relay_chain)
-    elif database_info['database'] == 'duckdb':
-        from duckdb_utils import create_blocks_table as create_duckdb_tables
-        create_duckdb_tables(db_connection, chain, relay_chain)
     elif database_info['database'] == 'bigquery':
         from bigquery_utils import create_blocks_table as create_bigquery_tables
         create_bigquery_tables(db_connection, database_info['database_dataset'], database_info['database_table'])
@@ -54,23 +48,17 @@ def insert_block_data(database_info, db_connection, block_data, chain_name, rela
         from mysql_utils import connect_to_mysql, close_connection, insert_block_data
         insert_block_data(db_connection, block_data, chain_name, relay_chain)
         close_connection(db_connection)
-    elif database_info['database'] == 'duckdb':
-        from duckdb_utils import connect_to_db, close_connection, insert_block
-        insert_block(db_connection, block_data)
-        close_connection(db_connection)
     elif database_info['database'] == 'bigquery':
         from bigquery_utils import connect_to_bigquery, insert_block
         insert_block(db_connection, database_info['database_dataset'], database_info['database_table'], block_data)
 
 
 def close_connection(db_connection, database_info: Dict[str, Any]):
-    if database_info['database'] in ['postgres', 'mysql', 'duckdb']:
+    if database_info['database'] in ['postgres', 'mysql']:
         if database_info['database'] == 'postgres':
             from postgres_utils import close_connection as close_postgres
         elif database_info['database'] == 'mysql':
             from mysql_utils import close_connection as close_mysql
-        elif database_info['database'] == 'duckdb':
-            from duckdb_utils import close_connection as close_duckdb
         
         close_function = locals()[f'close_{database_info["database"]}']
         close_function(db_connection)
@@ -85,8 +73,6 @@ def query_last_block(db_connection, database_info: Dict[str, Any], chain: str, r
         from postgres_utils import query
     elif database_info['database'] == 'mysql':
         from mysql_utils import query_block_data as query
-    elif database_info['database'] == 'duckdb':
-        from duckdb_utils import query
     elif database_info['database'] == 'bigquery':
         from bigquery_utils import query
     else:
@@ -111,8 +97,6 @@ def query_recent_blocks(db_connection, database_info: Dict[str, Any], chain: str
         from postgres_utils import query
     elif database_info['database'] == 'mysql':
         from mysql_utils import query_block_data as query
-    elif database_info['database'] == 'duckdb':
-        from duckdb_utils import query
     elif database_info['database'] == 'bigquery':
         from bigquery_utils import query
     else:

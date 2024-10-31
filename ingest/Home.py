@@ -1,16 +1,11 @@
 import streamlit as st
 import argparse
-import duckdb
 import pandas as pd
 import json
 import time
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from database_utils import connect_to_database, close_connection, query_recent_blocks
-
-# Function to connect to DuckDB
-def connect_to_db(db_path='blocks.db'):
-    return duckdb.connect(db_path, read_only=True)
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Block ingestion script for Substrate-based chains")
@@ -99,8 +94,6 @@ with placeholder.container():
             num_extrinsics = len(recent_blocks['extrinsics'].iloc[0])
         elif args.database == 'mysql':
             num_extrinsics = len(json.loads(recent_blocks['extrinsics'].iloc[0]))
-        elif args.database == 'duckdb':
-            num_extrinsics = len(recent_blocks['extrinsics'].iloc[0])
         elif args.database == 'bigquery':
             num_extrinsics = len(json.loads(recent_blocks['extrinsics'].iloc[0]))
         else:
@@ -119,12 +112,6 @@ with placeholder.container():
                 len(json.loads(recent_blocks['onfinalize'].iloc[0])['events']) +
                 len(json.loads(recent_blocks['oninitialize'].iloc[0])['events']) +
                 sum(len(ex['events']) for ex in json.loads(recent_blocks['extrinsics'].iloc[0]))
-            )
-        elif args.database == 'duckdb':
-            num_events = (
-                len(recent_blocks['onfinalize'].iloc[0]['events']) +
-                len(recent_blocks['oninitialize'].iloc[0]['events']) +
-                sum(len(ex['events']) for ex in recent_blocks['extrinsics'].iloc[0])
             )
         elif args.database == 'bigquery':
             num_events = (

@@ -53,8 +53,8 @@ def main():
     close_connection(db_connection, database_info)
     print(f"Connected to {args.database} and created tables for {args.chain} on {args.relay_chain}")
 
-    # sidecar_url = "http://172.17.0.1:8080"
-    sidecar_url = "http://localhost:8080"
+    sidecar_url = "http://172.18.0.1:8080"
+
     last_block = -1
 
     if args.ingest_mode == "historical":
