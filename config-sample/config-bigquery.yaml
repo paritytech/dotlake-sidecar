@@ -1,6 +1,6 @@
 relay_chain: Polkadot
-chain: Hydration
-wss: wss://hydradx-rpc.dwellir.com
+chain: Polkadot
+wss: wss://polkadot-rpc.dwellir.com
 databases:
   - type: bigquery
     project_id: project-id

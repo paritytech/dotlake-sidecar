@@ -27,8 +27,8 @@ cd dotlake-sidecar
 2. Configure your settings in `config.yaml`:
 ```yaml
 relay_chain: Polkadot
-chain: Hydration
-wss: wss://hydradx-rpc.dwellir.com
+chain: Polkadot
+wss: wss://polkadot-rpc.dwellir.com
 databases:
   - type: mysql
     host: xx.xx.xx.xx
