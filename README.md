@@ -1,53 +1,79 @@
 # dotlake-sidecar
 
-This repository contains the necessary components to set up and run a data ingestion pipeline for Polkadot-based blockchains using Substrate API Sidecar and a custom block ingest service.
+A data ingestion pipeline for Polkadot-based blockchains that combines Substrate API Sidecar with a custom block ingest service.
 
 ## Overview
 
-The dotlake-sidecar project facilitates the extraction and processing of blockchain data from Polkadot-based networks. It uses three main components:
+dotlake-sidecar enables comprehensive data extraction and processing from Polkadot-based networks through three key components:
 
-1. Substrate API Sidecar
-2. Custom Block Ingest Service
-3. Apache Superset
+- **Substrate API Sidecar**: REST service for blockchain data access
+- **Custom Block Ingest Service**: Data processing and storage pipeline
+- **Apache Superset**: Data visualization and analytics
 
-These components work together to provide a robust solution for capturing and processing blockchain data.
+## Prerequisites
 
-## Components
+- Docker and Docker Compose
+- Access to a Substrate-based blockchain node (WSS endpoint)
+- Sufficient storage space for blockchain data
 
-### 1. Substrate API Sidecar
+## Quick Start
 
-[Substrate API Sidecar](https://github.com/paritytech/substrate-api-sidecar) is an open-source REST service that runs alongside Substrate nodes. It provides a way to access blockchain data through a RESTful API, making it easier to query and retrieve information from the blockchain.
-
-### 2. Custom Block Ingest Service
-
-The custom block ingest service is a Docker container that processes and stores blockchain data. It is designed to work in conjunction with the Substrate API Sidecar to ingest blocks and related information from the specified blockchain. The service utilizes DuckDB, MySQL, PostgreSQL, and BigQuery as part of its data flow:
-
-1. The service ingests blockchain data from the Substrate API Sidecar.
-2. The ingested data is then processed and transformed as needed.
-3. The processed data is stored in DuckDB, MySQL, PostgreSQL, or BigQuery.
-
-### 3. Apache Superset
-
-Apache Superset is integrated for dashboarding capabilities, allowing users to visualize and analyze the ingested blockchain data effectively.
-
-## How It Works
-
-The system operates using the following workflow:
-
-1. The Substrate API Sidecar connects to a specified WebSocket endpoint (WSS) of a Substrate-based blockchain node.
-2. The Sidecar exposes a RESTful API on port 8080, allowing easy access to blockchain data.
-3. The custom block ingest service connects to the same WSS endpoint and begins processing blocks.
-4. The ingest service stores the processed data in DuckDB, MySQL, PostgreSQL, or BigQuery, making it available for further analysis or querying.
-5. Apache Superset can be used to create dashboards and visualizations based on the ingested data.
-
-## Usage
-
-To run the dotlake-sidecar, use the provided `dotlakeIngest.sh` script. This script sets up both the Substrate API Sidecar and the custom block ingest service as Docker containers, using `config.yaml` for deployment configuration.
-
-Example usage:
-
-To start the ingest service for polkadot, use the following command:
-
+1. Clone the repository:
+```bash
+git clone https://github.com/your-org/dotlake-sidecar.git
+cd dotlake-sidecar
 ```
+
+2. Configure your settings in `config.yaml`:
+```yaml
+relay_chain: Polkadot
+chain: Hydration
+wss: wss://hydradx-rpc.dwellir.com
+databases:
+  - type: mysql
+    host: xx.xx.xx.xx
+    port: 3306
+    name: dotlake_sidecar_poc
+    user: *****
+    password: ******
+ingest_mode: live  # live/historical
+start_block: 1
+end_block: 100
+```
+
+3. Start the ingestion pipeline:
+```bash
 sh dotlakeIngest.sh
 ```
+
+## Architecture
+
+### 1. Substrate API Sidecar
+- Connects to blockchain node via WebSocket
+- Exposes REST API on port 8080
+- Provides standardized access to blockchain data
+
+### 2. Custom Block Ingest Service
+Processes blockchain data through multiple stages:
+1. Data extraction from Sidecar API
+2. Transformation and enrichment
+3. Storage in chosen database:
+   - MySQL
+   - PostgreSQL
+   - BigQuery
+
+### 3. Apache Superset Integration
+- Custom visualization capabilities
+- Direct connection to stored data
+
+## Development
+
+To contribute or modify:
+
+1. Fork the repository
+2. Create a feature branch
+3. Submit a pull request
+
+## License
+
+[Apache 2.0](LICENSE)
