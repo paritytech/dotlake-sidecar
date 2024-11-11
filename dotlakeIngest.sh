@@ -1,5 +1,23 @@
 #!/bin/bash
 
+# Check the operating system and install yq if not already installed
+if [[ $(uname) == "Darwin" ]]; then
+    # macOS
+    if ! command -v yq &> /dev/null; then
+        echo "yq is not installed. Installing yq..."
+        brew install yq
+    fi
+elif [[ $(uname) == "Linux" ]]; then
+    # Linux
+    if ! command -v yq &> /dev/null; then
+        echo "yq is not installed. Installing yq..."
+        go install github.com/mikefarah/yq/v4@latest
+    fi
+else
+    echo "Unsupported operating system. Please install yq manually."
+    exit 1
+fi
+
 # Check if yq is installed
 if ! command -v yq &> /dev/null; then
     echo "yq is not installed. Please install it to parse YAML files."
