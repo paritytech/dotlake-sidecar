@@ -4,7 +4,7 @@ import datetime
 import json
 import logging
 
-def writeBlock(request, db_path = None):
+def writeBlock(request, database_info):
     request_json = request
     logging.basicConfig(level='INFO')
     logging.getLogger('writeBlock-logger')
@@ -62,29 +62,15 @@ def writeBlock(request, db_path = None):
     if block_data['finalized'] is not True and block_data['finalized'] is not False:
         return False
 
-    # storage_client = storage.Client()
-    # bucket = storage_client.bucket(bucket)
-    # blob = bucket.blob(f'{relay_chain}/{chain_name}/{dt.year}/{dt.month}/{dt.day}/{block_id}.json')
-    # blob.upload_from_string(json.dumps(block_data), content_type='application/json')
-
-    #TODO: Write to BigQuery
-    #TODO: Write to S3
-    #TODO: Write to duckDB  https://duckdb.org/docs/guides/python/install 
-    # Write to DuckDB
-    from duckdb_utils import connect_to_db, insert_block, close_connection
-
     try:
-        db_connection = connect_to_db(db_path)
-
-        # Insert the block data
-        insert_block(db_connection, block_data)
-
-        print(f"Successfully inserted block {block_id} into DuckDB")
-        close_connection(db_connection)
+        from database_utils import connect_to_database, insert_block_data, close_connection
+        
+        db_connection = connect_to_database(database_info)
+        insert_block_data(database_info , db_connection, block_data, chain_name, relay_chain)
+        print(f"Successfully inserted block {block_id} into {database_info['database']}")
+        close_connection(db_connection, database_info)
     except Exception as e:
-        print(f"Error inserting block {block_id} into DuckDB: {str(e)}")
+        print(f"Error inserting block {block_id} into {database_info['database']}: {str(e)}")
         return False
-    
 
     return True
-
