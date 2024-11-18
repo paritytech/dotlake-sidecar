@@ -50,8 +50,10 @@ if [[ $(yq eval '.databases[0].type' config.yaml) == "postgres" ]]; then
     SQLALCHEMY_URI="postgres+psycopg2://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 elif [[ $(yq eval '.databases[0].type' config.yaml) == "mysql" ]]; then
     SQLALCHEMY_URI="mysql+mysqldb://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+elif [[ $(yq eval '.databases[0].type' config.yaml) == "bigquery" ]]; then
+    SQLALCHEMY_URI="bigquery://${DB_PROJECT}"
 else
-    echo "Unsupported database type. Only postgres and mysql are supported."
+    echo "Unsupported database type. Only postgres, bigquery and mysql are supported."
     exit 1
 fi
 
@@ -68,14 +70,19 @@ export DB_PORT="$DB_PORT"
 export DB_NAME="$DB_NAME"
 export DB_USER="$DB_USER"
 export DB_PASSWORD="$DB_PASSWORD"
-export PROJECT_ID="$DB_PROJECT"
+export DB_PROJECT="$DB_PROJECT"
 export CREDENTIALS_PATH="$DB_CRED_PATH"
-export DATASET="$DB_DATASET"
-export TABLE="$DB_TABLE"
+export DB_DATASET="$DB_DATASET"
+export DB_TABLE="$DB_TABLE"
 export SQLALCHEMY_URI="$SQLALCHEMY_URI"
 export INGEST_MODE="$INGEST_MODE"
 export START_BLOCK="$START_BLOCK" 
 export END_BLOCK="$END_BLOCK"
+if [[ -n "$DB_CRED_PATH" ]]; then
+    DB_CREDENTIALS=$(<"$DB_CRED_PATH")
+    export DB_CREDENTIALS="$DB_CREDENTIALS"
+fi
+
 
 cd ingest
 docker-compose up -d
@@ -88,7 +95,11 @@ docker exec -it superset superset fab create-admin \
                --password admin
 
 docker exec -it superset superset db upgrade
-docker exec -it superset superset set_database_uri -d my_mysql_db -u "$SQLALCHEMY_URI"
+if [[ $DB_NAME == "bigquery" ]]; then
+    docker exec -it superset superset set_database_uri -d "$DB_NAME" -u "$SQLALCHEMY_URI" -se "{\"credentials_info\": $DB_CREDENTIALS}"
+else
+    docker exec -it superset superset set_database_uri -d "$DB_NAME" -u "$SQLALCHEMY_URI"
+fi
 
 cd ..
 

@@ -21,7 +21,7 @@ def connect_to_database(database_info: Dict[str, Any]):
         )
     elif database_info['database'] == 'bigquery':
         from bigquery_utils import connect_to_bigquery
-        return connect_to_bigquery(database_info['database_project'], database_info['database_cred_path'])
+        return connect_to_bigquery(database_info['database_project'], database_info['database_credentials'])
     else:
         raise ValueError(f"Unsupported database type: {database_info['database']}")
 
@@ -34,7 +34,7 @@ def create_tables(db_connection, database_info: Dict[str, Any], chain: str, rela
         create_mysql_tables(db_connection, chain, relay_chain)
     elif database_info['database'] == 'bigquery':
         from bigquery_utils import create_blocks_table as create_bigquery_tables
-        create_bigquery_tables(db_connection, database_info['database_dataset'], database_info['database_table'])
+        create_bigquery_tables(db_connection, database_info['database_dataset'], database_info['database_table'], database_info['database_project'])
     else:
         raise ValueError(f"Unsupported database type: {database_info['database']}")
 
@@ -85,7 +85,7 @@ def query_last_block(db_connection, database_info: Dict[str, Any], chain: str, r
             fetch_last_block_query = f"SELECT * FROM blocks_{relay_chain}_{chain} ORDER BY number DESC LIMIT 1"
     else:
         if database_info['database'] == 'bigquery':
-            fetch_last_block_query = f"SELECT * FROM {database_info['database_dataset']}.{database_info['database_table']} WHERE number={block_num} LIMIT 1"
+            fetch_last_block_query = f"SELECT * FROM {database_info['database_dataset']}.{database_info['database_table']} WHERE number='{block_num}' LIMIT 1"
         elif database_info['database'] == 'postgres':
             fetch_last_block_query = f"SELECT * FROM blocks_{relay_chain}_{chain} WHERE number='{block_num}' LIMIT 1"
         else:

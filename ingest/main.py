@@ -20,10 +20,11 @@ def parse_arguments():
     parser.add_argument("--db_path", required=True)
     parser.add_argument("--db_project")
     parser.add_argument("--db_cred_path")
+    parser.add_argument("--db_credentials")
     parser.add_argument("--db_dataset")
     parser.add_argument("--db_table")
     parser.add_argument("--db_host", required=False, help="Database host")
-    parser.add_argument("--db_port", required=False, type=int, help="Database port")
+    parser.add_argument("--db_port", required=False, help="Database port")
     parser.add_argument("--db_user", required=False, help="Database user")
     parser.add_argument("--db_password", required=False, help="Database password")
     parser.add_argument("--db_name", required=False, help="Database name")
@@ -39,6 +40,7 @@ def main():
         'database_dataset': args.db_dataset,
         'database_table': args.db_table,
         'database_cred_path': args.db_cred_path,
+        'database_credentials': args.db_credentials,
         'database_path': args.db_path,
         'database_host': args.db_host,
         'database_port': args.db_port,
