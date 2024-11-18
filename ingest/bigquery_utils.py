@@ -1,6 +1,7 @@
 import os
 from google.cloud import bigquery
 from google.oauth2 import service_account
+import json
 
 def connect_to_bigquery(project_id, credentials_path):
     """
@@ -13,17 +14,16 @@ def connect_to_bigquery(project_id, credentials_path):
     Returns:
         google.cloud.bigquery.client.Client: A BigQuery client.
     """
-    if not os.path.exists(credentials_path):
-        raise FileNotFoundError(f"Credentials file not found at {credentials_path}")
+    # if not os.path.exists(credentials_path):
+    #     raise FileNotFoundError(f"Credentials file not found at {credentials_path}")
 
-    credentials = service_account.Credentials.from_service_account_file(
-        credentials_path,
-        scopes=["https://www.googleapis.com/auth/cloud-platform"],
+    credentials = service_account.Credentials.from_service_account_info(
+        json.loads(credentials_path)
     )
 
     return bigquery.Client(credentials=credentials, project=project_id)
 
-def create_blocks_table(client, dataset_id, table_id):
+def create_blocks_table(client, dataset_id, table_id, project_id):
     """
     Create the blocks table if it doesn't exist.
     
@@ -98,7 +98,7 @@ def create_blocks_table(client, dataset_id, table_id):
         ])
     ]
 
-    table = bigquery.Table(f"{client.project}.{dataset_id}.{table_id}", schema=schema)
+    table = bigquery.Table(f"{project_id}.{dataset_id}.{table_id}", schema=schema)
     table = client.create_table(table, exists_ok=True)
     print(f"Created table {table.project}.{table.dataset_id}.{table.table_id}")
 

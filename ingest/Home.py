@@ -17,10 +17,11 @@ def parse_arguments():
     parser.add_argument("--db_path")
     parser.add_argument("--db_project")
     parser.add_argument("--db_cred_path")
+    parser.add_argument("--db_credentials")
     parser.add_argument("--db_dataset")
     parser.add_argument("--db_table")
     parser.add_argument("--db_host", required=False, help="Database host")
-    parser.add_argument("--db_port", required=False, type=int, help="Database port")
+    parser.add_argument("--db_port", required=False, help="Database port")
     parser.add_argument("--db_user", required=False, help="Database user")
     parser.add_argument("--db_password", required=False, help="Database password")
     parser.add_argument("--db_name", required=False, help="Database name")
@@ -35,6 +36,7 @@ database_info = {
         'database_dataset': args.db_dataset,
         'database_table': args.db_table,
         'database_cred_path': args.db_cred_path,
+        'database_credentials': args.db_credentials,
         'database_path': args.db_path,
         'database_host': args.db_host,
         'database_port': args.db_port,
@@ -95,7 +97,7 @@ with placeholder.container():
         elif args.database == 'mysql':
             num_extrinsics = len(json.loads(recent_blocks['extrinsics'].iloc[0]))
         elif args.database == 'bigquery':
-            num_extrinsics = len(json.loads(recent_blocks['extrinsics'].iloc[0]))
+            num_extrinsics = len(recent_blocks['extrinsics'].iloc[0])
         else:
             num_extrinsics = 0  # Default value if database type is not recognized
         extrinsics_col.metric("Extrinsics", num_extrinsics)
@@ -115,9 +117,9 @@ with placeholder.container():
             )
         elif args.database == 'bigquery':
             num_events = (
-                len(json.loads(recent_blocks['onfinalize'].iloc[0])['events']) +
-                len(json.loads(recent_blocks['oninitialize'].iloc[0])['events']) +
-                sum(len(ex['events']) for ex in json.loads(recent_blocks['extrinsics'].iloc[0]))
+                len(recent_blocks['onfinalize'].iloc[0]['events']) +
+                len(recent_blocks['oninitialize'].iloc[0]['events']) +
+                sum(len(ex['events']) for ex in recent_blocks['extrinsics'].iloc[0])
             )
         else:
             num_events = 0  # Default value if database type is not recognized
