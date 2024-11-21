@@ -1,10 +1,10 @@
-# dotlake-sidecar
+# dotlake-community
 
 A data ingestion pipeline for Polkadot-based blockchains that combines Substrate API Sidecar with a custom block ingest service.
 
 ## Overview
 
-dotlake-sidecar enables comprehensive data extraction and processing from Polkadot-based networks through three key components:
+dotlake-community enables comprehensive data extraction and processing from Polkadot-based networks through three key components:
 
 - **Substrate API Sidecar**: REST service for blockchain data access
 - **Custom Block Ingest Service**: Data processing and storage pipeline
@@ -20,8 +20,8 @@ dotlake-sidecar enables comprehensive data extraction and processing from Polkad
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-org/dotlake-sidecar.git
-cd dotlake-sidecar
+git clone https://github.com/your-org/dotlake-community.git
+cd dotlake-community
 ```
 
 2. Configure your settings in `config.yaml`:
