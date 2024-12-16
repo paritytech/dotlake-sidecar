@@ -1,0 +1,8 @@
+relay_chain: Polkadot
+chain: Polkadot
+wss: wss://polkadot-rpc.dwellir.com
+create_db: true
+retain_db: true 
+ingest_mode: live  # live/historical
+start_block: 1
+end_block: 100

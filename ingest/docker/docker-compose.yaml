@@ -35,11 +35,11 @@ services:
       - START_BLOCK=${START_BLOCK} 
       - END_BLOCK=${END_BLOCK}
     volumes:
-      - .:/app
+      - ../:/app
     command: >
       bash -c "
         pip install -r requirements.txt &&
-        chmod +x ./start-ingest.sh &&
+        chmod +x start-ingest.sh &&
         ./start-ingest.sh
       "
 
@@ -56,7 +56,6 @@ services:
       bash -c "superset db upgrade &&
                superset init &&
                superset run -h 0.0.0.0 -p 8088 --with-threads --reload --debugger"
-
 
 networks:
   default:

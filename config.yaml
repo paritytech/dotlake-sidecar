@@ -1,13 +1,15 @@
 relay_chain: Polkadot
 chain: Polkadot
 wss: wss://polkadot-rpc.dwellir.com
-databases:
-  - type: mysql
-    host: xx.xx.xx.xx
-    port: 3306
-    name: dotlake_sidecar_poc
-    user: *****
-    password: ******
+create_db: true  # Set to true if database needs to be created
+retain_db: true  # Set to true to retain database after the end of process.
+# databases:
+#   - type: postgres
+#     host: xx.xx.xx.xx
+#     port: 5432
+#     name: dotlake
+#     user: *****
+#     password: ******
 ingest_mode: live  # live/historical
 start_block: 1
 end_block: 100

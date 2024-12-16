@@ -1,11 +1,13 @@
 relay_chain: Polkadot
 chain: Polkadot
 wss: wss://polkadot-rpc.dwellir.com
+create_db: false
+retain_db: false 
 databases:
   - type: postgres
     host: xx.xx.xx.xx
     port: 5432
-    name: dotlake_sidecar_poc
+    name: dotlake
     user: ******
     password: *****
 ingest_mode: live  # live/historical
