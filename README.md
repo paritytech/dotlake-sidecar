@@ -29,13 +29,15 @@ cd dotlake-community
 relay_chain: Polkadot
 chain: Polkadot
 wss: wss://polkadot-rpc.dwellir.com
-databases:
-  - type: mysql
-    host: xx.xx.xx.xx
-    port: 3306
-    name: dotlake_sidecar_poc
-    user: *****
-    password: ******
+create_db: true  # Set to true if database needs to be created
+retain_db: true  # Set to true to retain database after the end of process.
+# databases:
+#   - type: postgres
+#     host: xx.xx.xx.xx
+#     port: 5432
+#     name: dotlake
+#     user: *****
+#     password: ******
 ingest_mode: live  # live/historical
 start_block: 1
 end_block: 100
@@ -44,6 +46,11 @@ end_block: 100
 3. Start the ingestion pipeline:
 ```bash
 sh dotlakeIngest.sh
+```
+
+4. To stop the ingestion and cleanup resources:
+```bash
+sh cleanup.sh
 ```
 
 ## Architecture
@@ -57,10 +64,7 @@ sh dotlakeIngest.sh
 Processes blockchain data through multiple stages:
 1. Data extraction from Sidecar API
 2. Transformation and enrichment
-3. Storage in chosen database:
-   - MySQL
-   - PostgreSQL
-   - BigQuery
+3. Storage in PostgreSQL
 
 ### 3. Apache Superset Integration
 - Custom visualization capabilities
@@ -74,6 +78,3 @@ To contribute or modify:
 2. Create a feature branch
 3. Submit a pull request
 
-## License
-
-[Apache 2.0](LICENSE)

@@ -31,6 +31,9 @@ WSS=$(yq eval '.wss' config.yaml)
 INGEST_MODE=$(yq eval '.ingest_mode' config.yaml)
 START_BLOCK=$(yq eval '.start_block' config.yaml)
 END_BLOCK=$(yq eval '.end_block' config.yaml)
+CREATE_DB=$(yq eval '.create_db' config.yaml)
+RETAIN_DB=$(yq eval '.retain_db' config.yaml)
+
 
 # Database configuration
 DB_TYPE=$(yq eval '.databases[0].type' config.yaml)
@@ -52,9 +55,15 @@ elif [[ $(yq eval '.databases[0].type' config.yaml) == "mysql" ]]; then
     SQLALCHEMY_URI="mysql+mysqldb://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 elif [[ $(yq eval '.databases[0].type' config.yaml) == "bigquery" ]]; then
     SQLALCHEMY_URI="bigquery://${DB_PROJECT}"
-else
-    echo "Unsupported database type. Only postgres, bigquery and mysql are supported."
-    exit 1
+elif [[ "$CREATE_DB" == "true" ]]; then
+    echo "Using local PostgreSQL database"
+    DB_TYPE="postgres"
+    DB_HOST="172.18.0.1" 
+    DB_PORT="5432"
+    DB_NAME="dotlake"
+    DB_USER="postgres"
+    DB_PASSWORD="postgres"
+    SQLALCHEMY_URI="postgresql://${DB_USER}:${DB_PASSWORD}@host.docker.internal:${DB_PORT}/${DB_NAME}"
 fi
 
 echo "SQLAlchemy URI created: ${SQLALCHEMY_URI}"
@@ -85,7 +94,13 @@ fi
 
 
 cd ingest
-docker-compose up -d
+if [[ "$CREATE_DB" == "true" ]]; then
+    docker compose -f docker/docker-internal-db.yaml up -d
+    # Wait for postgres to be ready
+    sleep 30
+else
+    docker compose -f docker/docker-compose.yaml up -d
+fi
 sleep 10
 docker exec -it superset superset fab create-admin \
                --username admin \
